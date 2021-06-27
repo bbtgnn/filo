@@ -3,10 +3,17 @@ import { splitParagraph } from "../functions/splitParagraph";
 export class Block {
   id: string;
   text: string;
+  items_bottom: Array<string>;
+  items_left: Array<string>;
+  items_right: Array<string>;
 
   constructor(id: string, text: string) {
     this.id = id;
     this.text = text;
+
+    this.items_bottom = [];
+    this.items_left = [];
+    this.items_right = [];
   }
 
   split(text: string): Array<Block> {
