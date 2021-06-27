@@ -1,7 +1,9 @@
 <script>
   import Content from "./components/Content.svelte";
-  import { nodes } from "./stores/nodes";
+  import Zone from "./components/Zone.svelte";
+  import { blocks } from "./stores/blocks";
+  import { dragDisabled } from "./stores/dragDisabled";
 </script>
 
-<Content node={$nodes.node1} />
-<pre>{JSON.stringify($nodes, null, 4)}</pre>
+<Zone bind:items={$blocks} />
+<pre>{JSON.stringify($blocks, null, 4)}</pre>

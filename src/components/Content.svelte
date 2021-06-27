@@ -1,26 +1,26 @@
-<script>
-  import Zone from "./Zone.svelte";
-  import Block from "./Block.svelte";
-
-  export let node;
-
+<script lang="ts">
   import { createEventDispatcher } from "svelte";
+  import Zone from "./Zone.svelte";
+  import TextBlock from "./TextBlock.svelte";
+  import type { Block } from "../classes/Block";
+
+  export let block: Block;
 
   const dispatch = createEventDispatcher();
-  function split(e) {
-    dispatch("split", {
-      node: e.detail.node,
-    });
+  function handleSplit(e) {
+    const blocks: Array<Block> = e.detail.block.split(e.detail.selection);
+    block = blocks[0];
+    block.items_bottom = [...blocks.slice(1), ...block.items_bottom];
   }
 </script>
 
 <div class="row">
-  <Zone bind:items={node.items_left} />
+  <Zone bind:items={block.items_left} />
   <div class="col">
-    <Block {node} on:split={split} />
-    <Zone bind:items={node.items_bottom} />
+    <TextBlock {block} on:split={handleSplit} />
+    <Zone bind:items={block.items_bottom} />
   </div>
-  <Zone bind:items={node.items_right} />
+  <Zone bind:items={block.items_right} />
 </div>
 
 <style>

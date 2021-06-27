@@ -1,16 +1,19 @@
 <script lang="ts">
-  export let node;
   import { createEventDispatcher } from "svelte";
+  import type { Block } from "../classes/Block";
+
+  export let block: Block;
 
   const dispatch = createEventDispatcher();
   function split() {
     dispatch("split", {
-      node: node,
+      block: block,
+      selection: document.getSelection().toString(),
     });
   }
 </script>
 
-<div class="content">{node.text}</div>
+<div class="content">{block.text}</div>
 <button on:click={split}>split</button>
 
 <style>

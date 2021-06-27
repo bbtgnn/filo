@@ -3,9 +3,9 @@ import { splitParagraph } from "../functions/splitParagraph";
 export class Block {
   id: string;
   text: string;
-  items_bottom: Array<string>;
-  items_left: Array<string>;
-  items_right: Array<string>;
+  items_bottom: Array<Block>;
+  items_left: Array<Block>;
+  items_right: Array<Block>;
 
   constructor(id: string, text: string) {
     this.id = id;

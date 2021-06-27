@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { flip } from "svelte/animate";
   import {
     dndzone,
@@ -6,16 +6,11 @@
     TRIGGERS,
     SHADOW_PLACEHOLDER_ITEM_ID,
   } from "svelte-dnd-action";
-
-  import { splitParagraph } from "../functions/splitParagraph";
-
   import Content from "./Content.svelte";
-
   import { dragDisabled } from "../stores/dragDisabled";
+  import type { Block } from "../classes/Block";
 
-  import { nodes } from "../stores/nodes";
-
-  export let items = [];
+  export let items: Array<Block> = [];
 
   const flipDurationMs = 300;
 
@@ -37,7 +32,6 @@
       info: { source },
     } = e.detail;
     items = newItems;
-    nodes.set({ ...$nodes });
     // Ensure dragging is stopped on drag finish via pointer (mouse, touch)
     if (source === SOURCES.POINTER) {
       dragDisabled.set(true);
@@ -55,18 +49,18 @@
       dragDisabled.set(false);
   }
 
-  function handleSplit(e) {
-    console.log(e.detail);
-    const selection = document.getSelection().toString();
-    if (selection.trim() != "") {
-      const new_text = splitParagraph(e.detail.node.text, selection);
-      console.log(new_text);
-      // const index = blocks.indexOf(e.detail.block);
-      // const first_p = blocks.slice(0, index);
-      // const second_p = blocks.slice(index + 1);
-      // blocks = [...first_p, ...new_blocks, ...second_p];
-    }
-  }
+  // function handleSplit(e) {
+  //   console.log(e.detail);
+  //   const selection = document.getSelection().toString();
+  //   if (selection.trim() != "") {
+  //     const new_text = splitParagraph(e.detail.node.text, selection);
+  //     console.log(new_text);
+  //     // const index = blocks.indexOf(e.detail.block);
+  //     // const first_p = blocks.slice(0, index);
+  //     // const second_p = blocks.slice(index + 1);
+  //     // blocks = [...first_p, ...new_blocks, ...second_p];
+  //   }
+  // }
 </script>
 
 <section
@@ -92,7 +86,7 @@
           on:touchstart={startDrag}
           on:keydown={handleKeyDown}
         />
-        <Content node={$nodes[item.id]} on:split={handleSplit} />
+        <Content block={item} />
       </div>
     {/each}
   {/if}
