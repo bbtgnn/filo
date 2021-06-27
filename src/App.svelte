@@ -2,7 +2,6 @@
   import { text } from "./test/sampleText";
   import { Block } from "./classes/Block";
   import BlockUI from "./components/BlockUI.svelte";
-  import Column from "./components/Column.svelte";
 
   let blocks: Array<Block> = [new Block("0", text)];
 
@@ -19,7 +18,9 @@
 </script>
 
 <main>
-  <Column items={blocks} />
+  {#each blocks as block}
+    <BlockUI {block} on:split={handleSplit} />
+  {/each}
 </main>
 
 <style>
