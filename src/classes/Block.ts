@@ -1,5 +1,3 @@
-import { splitParagraph } from "../functions/splitParagraph";
-
 export class Block {
   id: string;
   text: string;
@@ -16,20 +14,15 @@ export class Block {
     this.items_right = [];
   }
 
-  split(text: string): Array<Block> {
-    try {
-      // Array will store the new blocks
-      const newBlocks: Array<Block> = [];
-      // We get the splitted text
-      const parts = splitParagraph(this.text, text);
-      // Then for each part we create a block
-      parts.forEach((part, index) => {
-        newBlocks.push(new Block(this.id + index, part));
-      });
-      return newBlocks;
-    } catch (e) {
-      // If fails we return the block
-      return [this];
-    }
+  split(index: number): Array<Block> {
+    // Array will store the new blocks
+    const newBlocks: Array<Block> = [];
+    // We get the splitted text
+    const parts = [this.text.substring(0, index), this.text.substring(index)];
+    // Then for each part we create a block
+    parts.forEach((part, index) => {
+      newBlocks.push(new Block(this.id + index, part));
+    });
+    return newBlocks;
   }
 }
