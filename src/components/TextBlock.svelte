@@ -1,23 +1,25 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import type { Block } from "../classes/Block";
   import { clickOutside } from "../functions/clickOutside";
 
-  export let block: Block;
+  export let text: string;
+  export let id: number;
 
-  let selected = false;
   let index = 0;
 
-  const dispatch = createEventDispatcher();
+  const dispatch =
+    createEventDispatcher<{
+      split: { text: string; index: number; id: number };
+    }>();
   function split() {
     dispatch("split", {
-      block: block,
-      index: index,
+      text,
+      index,
+      id,
     });
-    selected = false;
   }
 
-  function handleClickSplit(event) {
+  function handleClick(event) {
     let selection = window.getSelection();
     if (selection.isCollapsed) {
       if (event.target.getAttribute("data-side") == "right") {
@@ -30,37 +32,40 @@
 </script>
 
 <div
-  class="content"
-  on:click={() => {
-    selected = true;
-  }}
   use:clickOutside
   on:click_outside={() => {
-    selected = false;
     index = 0;
   }}
 >
-  <span data-side="left" on:click={handleClickSplit}>
-    {block.text.substring(0, index)}
-  </span>
-  {#if selected}
+  {#if text.substring(0, index).length > 0}
+    <span data-side="left" on:click={handleClick}>
+      {text.substring(0, index)}
+    </span>
+  {/if}
+
+  {#if index > 0 && index < text.length}
     <span class="cursor" on:click={split}>|</span>
   {/if}
-  <span data-side="right" on:click={handleClickSplit}>
-    {block.text.substring(index)}
-  </span>
+
+  {#if text.substring(index).length > 0}
+    <span data-side="right" on:click={handleClick}>
+      {text.substring(index)}
+    </span>
+  {/if}
 </div>
 
 <style>
-  .content {
+  div {
     border: 1px solid black;
-    min-width: 200px;
+    padding: 4px;
   }
+
   .cursor {
-    margin: 0 -4px;
     color: red;
     padding: 0 4px;
+    user-select: none;
   }
+
   .cursor:hover {
     background-color: rgba(0, 0, 0, 0.5);
   }
