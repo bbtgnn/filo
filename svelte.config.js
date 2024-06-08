@@ -15,8 +15,7 @@ const config = {
 			assets: 'docs',
 			pages: 'docs',
 			fallback: '404.html',
-			precompress: false,
-			strict: true
+			precompress: false
 		}),
 		paths: {
 			base: process.argv.includes('dev') ? '' : process.env.BASE_PATH
