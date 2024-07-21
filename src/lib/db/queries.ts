@@ -1,28 +1,30 @@
 import type Surreal from 'surrealdb.js';
-import { Block, Link } from './schema';
+import { DbBlock, DbLink } from './schema';
 import { RecordId } from 'surrealdb.js';
 
-const BLOCK = Block.identifier;
-const LINK = Link.identifier;
+const BLOCK = DbBlock.identifier;
+const LINK = DbLink.identifier;
 
-export async function createBlock(blockId: string, blockData: typeof Block.Type, db: Surreal) {
-	const block = new Block(blockData);
-	// @ts-expect-error To solve
-	await db.create(new RecordId(BLOCK, blockId), block);
+export async function createBlock(
+	blockId: string,
+	blockData: Partial<typeof DbBlock.Type>,
+	db: Surreal
+) {
+	await db.create(new RecordId(BLOCK, blockId), blockData);
 }
 
 export async function getBlocks(db: Surreal) {
-	return db.select(BLOCK);
+	return db.select(BLOCK) as unknown as DbBlock[];
 }
 
 export async function getLinks(db: Surreal) {
-	return db.select(LINK);
+	return db.select(LINK) as unknown as DbLink[];
 }
 
-export async function createLink(linkData: typeof Link.Type, db: Surreal) {
-	const { i, j } = linkData;
+export async function createLink(linkData: Partial<typeof DbLink.Type>, db: Surreal) {
+	const { dimension, sign } = linkData;
 	const inId = `${BLOCK}:${linkData.in}`;
 	const outId = `${BLOCK}:${linkData.out}`;
-	const query = `RELATE ${inId}->${LINK}->${outId} SET i = ${i}, j = ${j};`;
+	const query = `RELATE ${inId}->${LINK}->${outId} SET dimension = ${dimension}, sign = ${sign};`;
 	await db.query(query);
 }

@@ -1,11 +1,11 @@
 <script lang="ts">
-	import type { Block, Link } from '$lib/db/schema';
+	import type { DbBlock, DbLink } from '$lib/db/schema';
 	import * as d3 from 'd3';
 	import { onMount } from 'svelte';
 	import { Record as R } from 'effect';
 
-	export let blocks: (Block & { id: string })[];
-	export let links: (Link & { id: string })[];
+	export let blocks: (DbBlock & { id: string })[];
+	export let links: (DbLink & { id: string })[];
 
 	let el: HTMLDivElement;
 	let graphSvg: SVGSVGElement | null = null;
