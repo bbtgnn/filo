@@ -17,6 +17,7 @@
 	let { blocks, dimensions, links } = data;
 
 	const graph = initGraph(blocks, links);
+
 	onMount(() => {
 		const layout = new ForceSupervisor(graph);
 		layout.start();
@@ -39,7 +40,7 @@
 
 <div
 	use:graphView={graph}
-	style="width: 100vw; height: 700px; background-color: lightgoldenrodyellow;"
+	style="width: 100vw;; height: 500px; background-color: lightgoldenrodyellow;"
 ></div>
 
 <div>
