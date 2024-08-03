@@ -1,15 +1,12 @@
--- TODO: add table for "dimensions", add table for "versors":
--- sono vettori che spiegano come una determinata dimensione viene "visualizzata"
--- in modo che sia possibile "cambiare" la visualizzazione
-
 DEFINE TABLE IF NOT EXISTS block SCHEMAFULL;
 
 DEFINE FIELD text ON TABLE block TYPE string;
-DEFINE FIELD parents ON TABLE block TYPE record<block>;
-DEFINE FIELD children ON TABLE block TYPE record<block>;
--- DEFINE FIELD i ON block TYPE int DEFAULT 0;
--- DEFINE FIELD j ON block TYPE int DEFAULT 0;
--- DEFINE FIELD k ON block TYPE int DEFAULT 0;
+
+---
+
+DEFINE TABLE IF NOT EXISTS dimension SCHEMAFULL;
+
+DEFINE FIELD vector ON TABLE dimension TYPE string;
 
 --
 
@@ -17,7 +14,7 @@ DEFINE FIELD children ON TABLE block TYPE record<block>;
 
 DEFINE FIELD in ON TABLE link TYPE record<block>;
 DEFINE FIELD out ON TABLE link TYPE record<block>;
-DEFINE FIELD dimension ON TABLE link TYPE string DEFAULT "i";
+DEFINE FIELD dimension ON TABLE link TYPE record<dimension>;
 DEFINE FIELD sign ON TABLE link TYPE number; -- has to be -1 or 1
 
 --

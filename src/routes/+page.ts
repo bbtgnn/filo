@@ -1,25 +1,35 @@
-import { createBlock, createLink, getBlocks, getLinks } from '$lib/db/queries.js';
+import {
+	createBlock,
+	getBlocks,
+	createDimension,
+	getDimensions,
+	createLink,
+	getLinks
+} from '$lib/db/queries.js';
 
 export const load = async ({ parent }) => {
 	const { db } = await parent();
 
-	await createBlock('A', { text: 'ciao' }, db);
-	await createBlock('B', { text: 'ciao' }, db);
-	await createBlock('C', { text: 'ciao' }, db);
-	await createBlock('D', { text: 'ciao' }, db);
-	await createBlock('E', { text: 'ciao' }, db);
-	await createBlock('F', { text: 'ciao' }, db);
+	await createDimension(db, 'x', { vector: '100' });
+	await createDimension(db, 'y', { vector: '010' });
 
-	await createLink({ in: 'A', out: 'B', dimension: 'j', sign: 1 }, db);
-	await createLink({ in: 'B', out: 'C', dimension: 'j', sign: 1 }, db);
+	await createBlock(db, 'A', { text: 'ciao' });
+	await createBlock(db, 'B', { text: 'ciao' });
+	await createBlock(db, 'C', { text: 'ciao' });
+	await createBlock(db, 'D', { text: 'ciao' });
+	await createBlock(db, 'E', { text: 'ciao' });
+	await createBlock(db, 'F', { text: 'ciao' });
 
-	await createLink({ in: 'A', out: 'D', dimension: 'i', sign: 1 }, db);
+	await createLink(db, { in: 'A', out: 'B', dimension: 'x', sign: 1 });
+	await createLink(db, { in: 'B', out: 'C', dimension: 'x', sign: 1 });
+	await createLink(db, { in: 'A', out: 'D', dimension: 'y', sign: 1 });
+	await createLink(db, { in: 'D', out: 'E', dimension: 'x', sign: 1 });
+	await createLink(db, { in: 'E', out: 'F', dimension: 'x', sign: 1 });
+	await createLink(db, { in: 'C', out: 'F', dimension: 'y', sign: 1 });
 
-	await createLink({ in: 'D', out: 'E', dimension: 'j', sign: 1 }, db);
-	await createLink({ in: 'B', out: 'E', dimension: 'i', sign: 1 }, db);
-
-	await createLink({ in: 'E', out: 'F', dimension: 'j', sign: 1 }, db);
-	await createLink({ in: 'C', out: 'F', dimension: 'i', sign: 1 }, db);
-
-	return { blocks: await getBlocks(db), links: await getLinks(db) };
+	return {
+		blocks: await getBlocks(db),
+		dimensions: await getDimensions(db),
+		links: await getLinks(db)
+	};
 };

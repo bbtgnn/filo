@@ -1,30 +1,43 @@
 import type Surreal from 'surrealdb.js';
-import { DbBlock, DbLink } from './schema';
+import { Dao } from './schema';
 import { RecordId } from 'surrealdb.js';
+import { pipe } from 'effect';
+import type { Entry } from './types';
 
-const BLOCK = DbBlock.identifier;
-const LINK = DbLink.identifier;
-
-export async function createBlock(
-	blockId: string,
-	blockData: Partial<typeof DbBlock.Type>,
-	db: Surreal
-) {
-	await db.create(new RecordId(BLOCK, blockId), blockData);
+export function createBlock(db: Surreal, id: string, data: Dao['Block']['Encoded']) {
+	return pipe(new Dao.Block(data), (data) =>
+		db.create<Dao['Block']['Encoded']>(new RecordId(Dao.Block.identifier, id), data)
+	);
 }
 
-export async function getBlocks(db: Surreal) {
-	return db.select(BLOCK) as unknown as DbBlock[];
+export function getBlocks(db: Surreal) {
+	return db.select<Entry<Dao['Block']['Encoded']>>(Dao.Block.identifier);
 }
 
-export async function getLinks(db: Surreal) {
-	return db.select(LINK) as unknown as DbLink[];
+export function createDimension(db: Surreal, id: string, data: Dao['Dimension']['Encoded']) {
+	return pipe(new Dao.Dimension(data), (data) =>
+		db.create<Dao['Dimension']['Encoded']>(new RecordId(Dao.Dimension.identifier, id), data)
+	);
 }
 
-export async function createLink(linkData: Partial<typeof DbLink.Type>, db: Surreal) {
-	const { dimension, sign } = linkData;
-	const inId = `${BLOCK}:${linkData.in}`;
-	const outId = `${BLOCK}:${linkData.out}`;
-	const query = `RELATE ${inId}->${LINK}->${outId} SET dimension = ${dimension}, sign = ${sign};`;
-	await db.query(query);
+export function getDimensions(db: Surreal) {
+	return db.select<Entry<Dao['Dimension']['Encoded']>>(Dao.Dimension.identifier);
+}
+
+export async function createLink(db: Surreal, data: Dao['Link']['Encoded']) {
+	const { dimension, sign } = data;
+	const inId = `${Dao.Block.identifier}:${data.in}`;
+	const outId = `${Dao.Block.identifier}:${data.out}`;
+	const dimensionId = `${Dao.Dimension.identifier}:${dimension}`;
+	const query = `RELATE ${inId}->${Dao.Link.identifier}->${outId} SET dimension = ${dimensionId}, sign = ${sign};`;
+	try {
+		await db.query(query);
+	} catch (e) {
+		// @ts-expect-error e is unknown
+		console.log(e.message);
+	}
+}
+
+export function getLinks(db: Surreal) {
+	return db.select<Entry<Dao['Link']['Encoded']>>(Dao.Link.identifier);
 }
