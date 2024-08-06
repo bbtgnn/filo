@@ -7,16 +7,20 @@ import Sigma from 'sigma';
 type Block = Dao['Block']['Type'];
 type Link = Dao['Link']['Type'];
 
-type WithCoords<T> = T & {
+export type WithCoords<T> = T & {
 	x: number;
 	y: number;
+	i: number;
+	j: number;
 };
 
-type Graph = DirectedGraph<WithCoords<Entry<Block>>, Entry<Link>>;
+export type Graph = DirectedGraph<WithCoords<Entry<Block>>, Entry<Link>>;
 
 export function initGraph(blocks: Entry<Block>[], links: Entry<Link>[]): Graph {
 	const graph = new DirectedGraph<WithCoords<Entry<Block>>, Entry<Link>>();
-	blocks.forEach((b) => graph.addNode(b.id, { ...b, x: Math.random(), y: Math.random() }));
+	blocks.forEach((b) =>
+		graph.addNode(b.id, { ...b, x: Math.random(), y: Math.random(), i: 0, j: 0 })
+	);
 	links.forEach((l) => graph.addEdge(l.in, l.out, l));
 	return graph;
 }

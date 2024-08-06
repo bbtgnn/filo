@@ -21,7 +21,7 @@ export function createDimension(db: Surreal, id: string, data: Dao['Dimension'][
 }
 
 export function getDimensions(db: Surreal) {
-	return db.select<Entry<Dao['Dimension']['Encoded']>>(Dao.Dimension.identifier);
+	return db.select<Entry<Dao['Dimension']['t']>>(Dao.Dimension.identifier);
 }
 
 export async function createLink(db: Surreal, data: Dao['Link']['Encoded']) {
