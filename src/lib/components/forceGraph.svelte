@@ -1,4 +1,4 @@
-<script lang="ts">
+<!-- <script lang="ts">
 	import type { DbBlock, DbLink } from '$lib/db/schema';
 	import * as d3 from 'd3';
 	import { onMount } from 'svelte';
@@ -38,4 +38,4 @@
 
 <div bind:this={el}>
 	{@html graphSvg}
-</div>
+</div> -->

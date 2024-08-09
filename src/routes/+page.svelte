@@ -5,7 +5,7 @@
 	import { onMount } from 'svelte';
 	import { bfs } from 'graphology-traversal';
 	import type { Entry } from '$lib/db/types.js';
-	import { Block, Link } from '$lib/db/schema.js';
+	import type { Block, Link } from '$lib/db/schema.js';
 
 	// import { invalidateAll } from '$app/navigation';
 	// // import ForceGraph from '$lib/components/forceGraph.svelte';
@@ -88,10 +88,6 @@
 	// Svelte reactivity update
 	graph = graph;
 
-	// function dbBlockToBlock(b: DbBlock): Block {
-	// 	return new Block({ content: b.text, abstractPosition: { x: b.j, y: b.i } }); // Todo: add last dimension
-	// }
-
 	// onMount(async () => {
 	// 	// sortLinks(blocks, links);
 	// 	// preprocessLinks(blocks);
@@ -101,18 +97,16 @@
 	// });
 </script>
 
-<hr />
-
 <div
 	use:graphView={graph}
 	style="width: 100vw;; height: 500px; background-color: lightgoldenrodyellow;"
 ></div>
 
-<!-- <div>
+<div>
 	<pre>{JSON.stringify(blocks, null, 2)}</pre>
 	<pre>{JSON.stringify(dimensions, null, 2)}</pre>
 	<pre>{JSON.stringify(links, null, 2)}</pre>
-</div> -->
+</div>
 
 <pre>{JSON.stringify(Array.from(graph.nodeEntries()), null, 4)}</pre>
 

@@ -1,11 +1,8 @@
 import { DirectedGraph } from 'graphology';
-import type { Dao } from '$lib/db/schema';
 import type { Entry } from '$lib/db/types';
 import type { Action } from 'svelte/action';
 import Sigma from 'sigma';
-
-type Block = Dao['Block']['Type'];
-type Link = Dao['Link']['Type'];
+import type { Block, Link } from '$lib/db/schema';
 
 export type WithCoords<T> = T & {
 	x: number;
@@ -14,7 +11,7 @@ export type WithCoords<T> = T & {
 	j: number;
 };
 
-export type Graph = DirectedGraph<WithCoords<Entry<Block>>, Entry<Link>>;
+export type Graph = DirectedGraph<WithCoords<Block>, Link>;
 
 export function initGraph(blocks: Entry<Block>[], links: Entry<Link>[]): Graph {
 	const graph = new DirectedGraph<WithCoords<Entry<Block>>, Entry<Link>>();
