@@ -1,4 +1,5 @@
 // import { Schema as S } from '@effect/schema';
+import * as kiwi from '@lume/kiwi';
 
 import type { RecordId } from 'surrealdb.js';
 import type { Entry } from './types';
@@ -26,6 +27,13 @@ export type Link = Entry<{
 	out: RecordId;
 	dimension: RecordId;
 }>;
+
+export type BlockWithCoords = Block & {
+	coordinates: {
+		x: kiwi.Variable;
+		y: kiwi.Variable;
+	};
+};
 
 // /* Record Id */
 
