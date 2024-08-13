@@ -11,6 +11,9 @@ importers:
       '@effect/schema':
         specifier: ^0.68.17
         version: 0.68.21(effect@3.5.1)
+      '@lume/kiwi':
+        specifier: ^0.4.3
+        version: 0.4.3
       '@types/d3':
         specifier: ^7.4.3
         version: 7.4.3
@@ -320,6 +323,9 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.25':
     resolution: {integrity: sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==}
+
+  '@lume/kiwi@0.4.3':
+    resolution: {integrity: sha512-+D9x9lwfYOpUVUc5GW8FBuU9X+PKaHzhBKBx/LyzO9onvr1izwIzFcn4SgQR71R66HT3ohT+5ky4aHZeQ5MhNQ==}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -2221,6 +2227,8 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
+
+  '@lume/kiwi@0.4.3': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:

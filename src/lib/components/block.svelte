@@ -1,21 +1,31 @@
 <script lang="ts">
-	import { Block } from '$lib/draw/old';
+	import type { BlockWithCoords } from '$lib/db/schema';
+	import { pipe, Array as A, Record as R, Option as O } from 'effect';
 
-	export let block: Block;
+	const spaceX = 200;
+	const spaceY = 200;
+	const width = 100;
+
+	export let block: BlockWithCoords;
+	$: x = getCoordinate(block, 'x') * spaceX;
+	$: y = getCoordinate(block, 'y') * spaceY;
+
+	function getCoordinate(block: BlockWithCoords, axis: 'x' | 'y') {
+		return pipe(
+			block.coordinates,
+			R.toEntries,
+			A.findFirst(([dimensionId]) => dimensionId.includes(axis)),
+			O.map(([, coordinate]) => coordinate.value()),
+			O.getOrThrow
+		);
+	}
 </script>
 
-<div
-	id={block.id}
-	style:--x="{block.position.x}px"
-	style:--y="{block.position.y}px"
-	style:--w="{block.width}px"
->
+<div id={block.id.toString()} style:--x="{x}px" style:--y="{y}px" style:--w="{width}px">
 	<span>
 		{block.id}
 	</span>
-	{block.content}
-	<pre>{JSON.stringify(block.neighbors, null, 2)}</pre>
-	<span>{JSON.stringify(block.abstractPosition, null, 2)}</span>
+	{block.text}
 </div>
 
 <style>
