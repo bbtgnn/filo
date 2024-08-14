@@ -39,6 +39,7 @@
 	"dependencies": {
 		"@effect/schema": "^0.68.17",
 		"@lume/kiwi": "^0.4.3",
+		"@sveltejs/adapter-static": "^3.0.4",
 		"@types/d3": "^7.4.3",
 		"d3": "^7.9.0",
 		"effect": "^3.4.7",
