@@ -35,6 +35,11 @@ export type BlockWithCoords = Block & {
 	};
 };
 
+export type LinkWithBlocks = Link & {
+	blockIn: BlockWithCoords;
+	blockOut: BlockWithCoords;
+};
+
 // /* Record Id */
 
 // export const BaseRecordId = S.Struct({

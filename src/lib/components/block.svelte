@@ -26,6 +26,7 @@
 		{block.id}
 	</span>
 	{block.text}
+	<slot />
 </div>
 
 <style>

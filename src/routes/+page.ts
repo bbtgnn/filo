@@ -20,6 +20,7 @@ export const load = async ({ parent }) => {
 	await createBlock(db, 'E', { text: 'ciao' });
 	await createBlock(db, 'F', { text: 'ciao' });
 	await createBlock(db, 'G', { text: 'ciao' });
+	await createBlock(db, 'Du', { text: 'ciao' });
 
 	await createLink(db, { in: 'A', out: 'B', dimension: 'x', sign: 1 });
 	await createLink(db, { in: 'A', out: 'F', dimension: 'x', sign: -1 });
@@ -28,6 +29,7 @@ export const load = async ({ parent }) => {
 	await createLink(db, { in: 'D', out: 'E', dimension: 'x', sign: 1 });
 	await createLink(db, { in: 'B', out: 'E', dimension: 'y', sign: 1 });
 	await createLink(db, { in: 'A', out: 'G', dimension: 'y', sign: -1 });
+	await createLink(db, { in: 'E', out: 'Du', dimension: 'y', sign: -1 });
 
 	return {
 		blocks: await getBlocks(db),
