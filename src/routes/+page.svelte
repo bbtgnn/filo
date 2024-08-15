@@ -2,4 +2,11 @@
 	import { base } from '$app/paths';
 </script>
 
-<a href="{base}/tests/constraints">Constraints test</a>
+<ul>
+	<li>
+		<a href="{base}/tests/constraints">Constraints test</a>
+	</li>
+	<li>
+		<a href="{base}/tests/split-text">Text split</a>
+	</li>
+</ul>
