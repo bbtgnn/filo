@@ -145,6 +145,7 @@ export function solveConflicts(conflicts: Conflict[], mainAxis: Dimension) {
 				console.log(e);
 			}
 		}
+		// TODO - update conflicts after each resolution
 	});
 }
 
