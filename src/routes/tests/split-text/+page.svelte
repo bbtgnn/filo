@@ -1,21 +1,18 @@
 <script lang="ts">
-	import BlockComp from './blockComp.svelte';
-	import { RecordId } from 'surrealdb.js';
-	import type { Token } from './lib';
-	import { pipe, Array } from 'effect';
+	import type { Block } from '$lib/db/schema.js';
+	import BlockContent, { type OnSplit } from '$lib/components/blockContent.svelte';
 
 	export let data;
 
-	let tokens: Token[] = [data.text];
+	let blocks = data.blocks;
+
+	const onSplit: OnSplit = function (newBlocks: Block[], oldBlock: Block) {
+		const index = blocks.indexOf(oldBlock);
+		blocks.splice(index, 1);
+		blocks = [...blocks.slice(0, index), ...newBlocks, ...blocks.slice(index)];
+	};
 </script>
 
-{#each tokens as token}
-	<BlockComp
-		block={token}
-		onSplit={(newTokens, oldToken) => {
-			const index = tokens.indexOf(oldToken);
-			tokens.splice(index, 1);
-			tokens = [...tokens.slice(0, index), ...newTokens, ...tokens.slice(index)];
-		}}
-	/>
+{#each blocks as block (block.id)}
+	<BlockContent {block} {onSplit} />
 {/each}

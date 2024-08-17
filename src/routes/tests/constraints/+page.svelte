@@ -1,27 +1,28 @@
 <script lang="ts">
 	import { findConflicts, graphDataToConstraints, solveConflicts } from '$lib/constraints/index.js';
-	import Block from '$lib/components/block.svelte';
+	import BlockPosition from '$lib/components/blockPosition.svelte';
 
 	export let data;
-	const { blocks: blocksWithCoordinates, links: linksWithBlocks } = graphDataToConstraints(
-		data.blocks,
-		data.links
-	);
+	let { blocks, links } = data;
+	graphDataToConstraints(blocks, links);
 	const conflicts = findConflicts({
-		blocks: Object.values(blocksWithCoordinates),
-		links: linksWithBlocks
+		blocks,
+		links
 	});
 	solveConflicts(conflicts, 'x');
 </script>
 
 <div style="position: relative;">
-	{#each blocksWithCoordinates as block}
-		<Block {block}>
-			{#each conflicts as c}
-				{#if c.type == 'block-block' && (c.blockA == block || c.blockB == block)}
-					<span style="color: red;">Conflict</span>
-				{/if}
-			{/each}
-		</Block>
+	{#each blocks as block}
+		<BlockPosition {block}>
+			<div style="border: 1px solid black;">
+				{block.text}
+				{#each conflicts as c}
+					{#if c.type == 'block-block' && (c.blockA == block || c.blockB == block)}
+						<span style="color: red;">Conflict</span>
+					{/if}
+				{/each}
+			</div>
+		</BlockPosition>
 	{/each}
 </div>

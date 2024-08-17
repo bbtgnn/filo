@@ -1,43 +1,28 @@
-import {
-	createBlock,
-	getBlocks,
-	createDimension,
-	getDimensions,
-	createLink,
-	getLinks
-} from '$lib/db/queries.js';
+import { Block, Link } from '$lib/db/schema.js';
 
-export const load = async ({ parent }) => {
-	const { db } = await parent();
+export const load = async () => {
+	const blocks: Block[] = [
+		Block.new({ id: '0', text: 'ciao' }),
+		Block.new({ id: '1', text: 'ciao' }),
+		Block.new({ id: '2', text: 'ciao' }),
+		Block.new({ id: '3', text: 'ciao' }),
+		Block.new({ id: '4', text: 'ciao' }),
+		Block.new({ id: '5', text: 'ciao' }),
+		Block.new({ id: '6', text: 'ciao' })
+	];
 
-	try {
-		await createDimension(db, 'x', { vector: '100' });
-		await createDimension(db, 'y', { vector: '010' });
-
-		await createBlock(db, 'A', { text: 'ciao' });
-		await createBlock(db, 'B', { text: 'ciao' });
-		await createBlock(db, 'C', { text: 'ciao' });
-		await createBlock(db, 'D', { text: 'ciao' });
-		await createBlock(db, 'E', { text: 'ciao' });
-		await createBlock(db, 'F', { text: 'ciao' });
-		await createBlock(db, 'G', { text: 'ciao' });
-		await createBlock(db, 'Du', { text: 'ciao' });
-
-		await createLink(db, { in: 'A', out: 'B', dimension: 'x', sign: 1 });
-		await createLink(db, { in: 'A', out: 'F', dimension: 'x', sign: -1 });
-		await createLink(db, { in: 'A', out: 'C', dimension: 'y', sign: 1 });
-		await createLink(db, { in: 'C', out: 'D', dimension: 'x', sign: 1 });
-		await createLink(db, { in: 'D', out: 'E', dimension: 'x', sign: 1 });
-		await createLink(db, { in: 'B', out: 'E', dimension: 'y', sign: 1 });
-		await createLink(db, { in: 'A', out: 'G', dimension: 'y', sign: -1 });
-		await createLink(db, { in: 'E', out: 'Du', dimension: 'y', sign: -1 });
-	} catch (e) {
-		console.log(e);
-	}
+	const links: Link[] = [
+		Link.new({ in: '0', out: '1', dimension: 'x', sign: 1 }),
+		Link.new({ in: '0', out: '2', dimension: 'y', sign: 1 }),
+		Link.new({ in: '2', out: '3', dimension: 'x', sign: 1 }),
+		Link.new({ in: '3', out: '4', dimension: 'x', sign: 1 }),
+		Link.new({ in: '1', out: '4', dimension: 'y', sign: 1 }),
+		Link.new({ in: '0', out: '5', dimension: 'x', sign: -1 }),
+		Link.new({ in: '0', out: '6', dimension: 'y', sign: -1 })
+	];
 
 	return {
-		blocks: await getBlocks(db),
-		dimensions: await getDimensions(db),
-		links: await getLinks(db)
+		blocks,
+		links
 	};
 };

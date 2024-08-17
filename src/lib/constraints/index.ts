@@ -1,66 +1,51 @@
-import type { Block, BlockWithCoords, Link, LinkWithBlocks } from '$lib/db/schema';
+import type { Block, Link } from '$lib/db/schema';
 import * as kiwi from '@lume/kiwi';
-import { Array as A, Record as R, pipe, Tuple, Option as O, Order } from 'effect';
+import { Array as A, pipe, Tuple, Option as O, Order } from 'effect';
 import { Solver } from './solver';
 
-export function graphDataToConstraints(blocks: Block[], links: Link[]): Context {
-	const blocksWithCoordinates: Record<string, BlockWithCoords> = pipe(
-		blocks,
-		A.map((block) => Tuple.make(block.id.toString(), block)),
-		R.fromEntries,
-		R.map((block) => ({
-			...block,
-			coordinates: {
-				x: new kiwi.Variable(),
-				y: new kiwi.Variable()
-			}
-		}))
-	);
-
-	const linksWithBlocks: LinkWithBlocks[] = pipe(
-		links,
-		A.map((link) => ({
-			...link,
-			blockIn: blocksWithCoordinates[link.in.toString()],
-			blockOut: blocksWithCoordinates[link.out.toString()]
-		}))
-	);
-
+export function graphDataToConstraints(blocks: Block[], links: Link[]) {
 	const constraints = pipe(
-		linksWithBlocks,
-		A.flatMap((linkWithBlocks) => [
+		links,
+		A.map((link) =>
 			pipe(
-				linkWithBlocks.dimension.id.toString() as Dimension,
-				(dimension) =>
-					new kiwi.Constraint(
-						linkWithBlocks.blockIn.coordinates[dimension].plus(1 * linkWithBlocks.sign),
-						linkWithBlocks.sign == 1 ? kiwi.Operator.Le : kiwi.Operator.Ge, // TODO - test
-						linkWithBlocks.blockOut.coordinates[dimension]
+				Tuple.make(
+					A.findFirst(blocks, (b) => b.id.toString() == link.in.toString()),
+					A.findFirst(blocks, (b) => b.id.toString() == link.out.toString())
+				),
+				O.all,
+				O.map(([blockIn, blockOut]) => [
+					pipe(
+						link.dimension.id.toString() as Dimension,
+						(dimension) =>
+							new kiwi.Constraint(
+								blockIn.coordinates[dimension].plus(1 * link.sign),
+								link.sign == 1 ? kiwi.Operator.Le : kiwi.Operator.Ge, // TODO - test
+								blockOut.coordinates[dimension]
+							)
+					),
+					pipe(
+						getPerpendicularDimension(link.dimension.id.toString()),
+						(dimension) =>
+							new kiwi.Constraint(
+								blockIn.coordinates[dimension],
+								kiwi.Operator.Eq,
+								blockOut.coordinates[dimension],
+								kiwi.Strength.weak
+							)
 					)
-			),
-			pipe(
-				getPerpendicularDimension(linkWithBlocks.dimension.id.toString()),
-				(dimension) =>
-					new kiwi.Constraint(
-						linkWithBlocks.blockIn.coordinates[dimension],
-						kiwi.Operator.Eq,
-						linkWithBlocks.blockOut.coordinates[dimension],
-						kiwi.Strength.weak
-					)
+				])
 			)
-		])
+		),
+		O.all,
+		O.map(A.flatten),
+		O.getOrThrow
 	);
 	constraints.forEach((c) => Solver.instance.addConstraint(c));
 	Solver.instance.updateVariables();
 
-	setMinBlockByDimension(R.values(blocksWithCoordinates), 'x');
-	setMinBlockByDimension(R.values(blocksWithCoordinates), 'y');
+	setMinBlockByDimension(blocks, 'x');
+	setMinBlockByDimension(blocks, 'y');
 	Solver.instance.updateVariables();
-
-	return {
-		blocks: Object.values(blocksWithCoordinates),
-		links: linksWithBlocks
-	};
 }
 
 type Dimension = 'x' | 'y';
@@ -70,14 +55,14 @@ function getPerpendicularDimension(dimensionId: string): Dimension {
 	return dimensionId == 'x' ? 'y' : 'x';
 }
 
-function setMinBlockByDimension(blocksWithCoordinates: BlockWithCoords[], dimension: Dimension) {
+function setMinBlockByDimension(blocks: Block[], dimension: Dimension) {
 	pipe(
-		blocksWithCoordinates,
+		blocks,
 		(blocks) =>
 			blocks.sort((a, b) => a.coordinates[dimension].value() - b.coordinates[dimension].value()),
 		A.head,
 		O.map((block) => {
-			Solver.instance.addEditVariable(block.coordinates[dimension], kiwi.Strength.strong);
+			Solver.instance.addEditVariable(block.coordinates[dimension], kiwi.Strength.weak);
 			Solver.instance.suggestValue(block.coordinates[dimension], 0);
 		})
 	);
@@ -86,8 +71,8 @@ function setMinBlockByDimension(blocksWithCoordinates: BlockWithCoords[], dimens
 // function linkToConstraint
 
 type Context = {
-	blocks: BlockWithCoords[];
-	links: LinkWithBlocks[];
+	blocks: Block[];
+	links: Link[];
 };
 
 export function findConflicts(context: Context): Conflict[] {
@@ -117,14 +102,14 @@ export function findConflictingBlocks({ blocks }: Context): BlockBlockConflict[]
 
 type BlockBlockConflict = {
 	type: 'block-block';
-	blockA: BlockWithCoords;
-	blockB: BlockWithCoords;
+	blockA: Block;
+	blockB: Block;
 };
 
 type BlockLinkConflict = {
 	type: 'block-link';
-	block: BlockWithCoords;
-	link: LinkWithBlocks;
+	block: Block;
+	link: Link;
 };
 
 export type Conflict = BlockBlockConflict | BlockLinkConflict;

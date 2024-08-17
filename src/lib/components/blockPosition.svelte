@@ -1,16 +1,21 @@
 <script lang="ts">
-	import type { BlockWithCoords } from '$lib/db/schema';
-	import { pipe, Array as A, Record as R, Option as O } from 'effect';
+	import { Block } from '$lib/db/schema';
+	import { pipe, Record as R, Option as O, Array as A } from 'effect';
+
+	//
+
+	export let block: Block;
+
+	//
 
 	const spaceX = 200;
 	const spaceY = 200;
 	const width = 100;
 
-	export let block: BlockWithCoords;
 	$: x = getCoordinate(block, 'x') * spaceX;
 	$: y = getCoordinate(block, 'y') * spaceY;
 
-	function getCoordinate(block: BlockWithCoords, axis: 'x' | 'y') {
+	function getCoordinate(block: Block, axis: 'x' | 'y') {
 		return pipe(
 			block.coordinates,
 			R.toEntries,
@@ -21,11 +26,7 @@
 	}
 </script>
 
-<div id={block.id.toString()} style:--x="{x}px" style:--y="{y}px" style:--w="{width}px">
-	<span>
-		{block.id}
-	</span>
-	{block.text}
+<div style:--x="{x}px" style:--y="{y}px" style:--w="{width}px">
 	<slot />
 </div>
 
@@ -35,12 +36,5 @@
 		left: var(--x);
 		top: var(--y);
 		width: var(--w);
-		background-color: beige;
-		border: 1px solid brown;
-		border-radius: 10px;
-		padding: 10px;
-	}
-	span {
-		font-weight: bold;
 	}
 </style>

@@ -1,13 +1,13 @@
 import { pipe, String as S, Array as A } from 'effect';
 import textSample from './text-sample.md?raw';
-import type { TokenGroup } from './lib';
+import { Block } from '$lib/db/schema';
 
 export const load = async () => {
-	const tokens: TokenGroup[] = pipe(
+	const blocks: Block[] = pipe(
 		textSample,
 		S.split('\n'),
-		A.map(S.split(' ')),
-		A.map((texts, index) => ({ tokens: texts.map((text) => ({ text, id: index.toString() })) }))
+		A.filter(S.isNonEmpty),
+		A.map((chunk, index) => Block.new({ id: index.toString(), text: chunk }))
 	);
-	return { tokens, text: { text: textSample, id: '0' } };
+	return { blocks };
 };

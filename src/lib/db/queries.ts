@@ -1,49 +1,49 @@
-import type Surreal from 'surrealdb.js';
-import type { Block, BlockIn, Dimension, DimensionIn, Link, LinkIn } from './schema';
-import { RecordId } from 'surrealdb.js';
+// import type Surreal from 'surrealdb.js';
+// import type { Block, BlockIn, Dimension, DimensionIn, Link, LinkIn } from './schema';
+// import { RecordId } from 'surrealdb.js';
 
-//
+// //
 
-const BlockId = 'block';
+// const BlockId = 'block';
 
-export function createBlock(db: Surreal, id: string, data: BlockIn) {
-	return db.create<BlockIn>(new RecordId(BlockId, id), data);
-}
+// export function createBlock(db: Surreal, id: string, data: BlockIn) {
+// 	return db.create<BlockIn>(new RecordId(BlockId, id), data);
+// }
 
-export function getBlocks(db: Surreal) {
-	return db.select<Block>(BlockId);
-}
+// export function getBlocks(db: Surreal) {
+// 	return db.select<Block>(BlockId);
+// }
 
-//
+// //
 
-const DimensionId = 'dimension';
+// const DimensionId = 'dimension';
 
-export function createDimension(db: Surreal, id: string, data: DimensionIn) {
-	return db.create<DimensionIn>(new RecordId(DimensionId, id), data);
-}
+// export function createDimension(db: Surreal, id: string, data: DimensionIn) {
+// 	return db.create<DimensionIn>(new RecordId(DimensionId, id), data);
+// }
 
-export function getDimensions(db: Surreal) {
-	return db.select<Dimension>(DimensionId);
-}
+// export function getDimensions(db: Surreal) {
+// 	return db.select<Dimension>(DimensionId);
+// }
 
-//
+// //
 
-const LinkId = 'link';
+// const LinkId = 'link';
 
-export async function createLink(db: Surreal, data: LinkIn) {
-	const { dimension, sign } = data;
-	const inId = `${BlockId}:${data.in}`;
-	const outId = `${BlockId}:${data.out}`;
-	const dimensionId = `${DimensionId}:${dimension}`;
-	const query = `RELATE ${inId}->${LinkId}->${outId} SET dimension = ${dimensionId}, sign = ${sign};`;
-	try {
-		await db.query(query);
-	} catch (e) {
-		// @ts-expect-error e is unknown
-		console.log(e.message);
-	}
-}
+// export async function createLink(db: Surreal, data: LinkIn) {
+// 	const { dimension, sign } = data;
+// 	const inId = `${BlockId}:${data.in}`;
+// 	const outId = `${BlockId}:${data.out}`;
+// 	const dimensionId = `${DimensionId}:${dimension}`;
+// 	const query = `RELATE ${inId}->${LinkId}->${outId} SET dimension = ${dimensionId}, sign = ${sign};`;
+// 	try {
+// 		await db.query(query);
+// 	} catch (e) {
+// 		// @ts-expect-error e is unknown
+// 		console.log(e.message);
+// 	}
+// }
 
-export function getLinks(db: Surreal) {
-	return db.select<Link>(LinkId);
-}
+// export function getLinks(db: Surreal) {
+// 	return db.select<Link>(LinkId);
+// }
