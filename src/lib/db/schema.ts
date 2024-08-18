@@ -81,6 +81,10 @@ export class Block extends S.Class<Block>('block')({
 			O.getOrThrow
 		);
 	}
+
+	get position() {
+		return [this.coordinates.x.value(), this.coordinates.y.value()] as [number, number];
+	}
 }
 
 export type BlockData = typeof Block.Encoded;

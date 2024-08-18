@@ -75,6 +75,7 @@
 
 				redrawKey = uuidv7(); // Crucial
 			} else if (e.key == ' ') {
+				e.preventDefault();
 				appState.blocks.push(appState.blockOut);
 				appState.links.push(appState.currentLink);
 				appState.blocksQueue.splice(0, 1);
@@ -92,13 +93,29 @@
 					Solver.instance.updateVariables();
 				}
 			} else if (['w', 'a', 's', 'd'].includes(e.key)) {
-				const positions = pipe(
-					[-1, 0, 1].map((c) => c + (appState.blockIn?.coordinates.x.value() ?? 0)),
-					Array.cartesian([-1, 0, 1].map((c) => c + (appState.blockIn?.coordinates.y.value() ?? 0)))
+				if (!appState.blockIn) return;
+				const positions: Record<string, { x: number; y: number }> = {
+					w: { x: 0, y: 1 },
+					s: { x: 0, y: -1 },
+					a: { x: -1, y: 0 },
+					d: { x: 1, y: 0 }
+				};
+				const nextPosition = positions[e.key];
+				const nextBlock = appState.blocks.find(
+					(b) =>
+						b.position[0] == appState.blockIn!.position[0] + nextPosition.x &&
+						b.position[1] == appState.blockIn!.position[1] + nextPosition.y
 				);
-				const availableNextNodes = appState.blocks.filter(
-					(b) => b.coordinates.x.value() == appState.blockIn?.coordinates.x.value()
-				);
+				if (!nextBlock) return;
+				console.log('ok');
+
+				Solver.removeLink(appState.currentLink);
+				appState.blockIn = nextBlock;
+				const d: Dimension = e.key == 'a' || e.key == 'd' ? 'x' : 'y';
+				const s: Sign = e.key == 'a' || e.key == 's' ? -1 : 1;
+				appState.currentLink = new Link(appState.blockIn, appState.blockOut, d, s);
+				Solver.addLink(appState.currentLink);
+				Solver.instance.updateVariables();
 			}
 		});
 	};
