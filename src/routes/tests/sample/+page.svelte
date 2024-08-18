@@ -1,52 +1,49 @@
 <script lang="ts">
-	import type { Block } from '$lib/db/schema.js';
+	import { Link, type Block, type Sign } from '$lib/db/schema.js';
 	import BlockContent, { type OnSplit } from '$lib/components/blockContent.svelte';
 	import BlockPosition from '$lib/components/blockPosition.svelte';
 	import { Solver } from '$lib/constraints/solver.js';
 	import * as kiwi from '@lume/kiwi';
-	import { createDimensionConstraint, updateBounds } from '$lib/constraints/index.js';
+	import { createBlockConstraint, updateBounds, type Dimension } from '$lib/constraints/index.js';
 	import type { Action } from 'svelte/action';
 	import { uuidv7 } from 'surrealdb.js';
+	import { setAppState } from '$lib/state/AppState.svelte.js';
+	import { Array, pipe } from 'effect';
 
 	let { data } = $props();
 
-	let blocks = $state(data.blocks);
-	let queue = $state<Block[]>([]);
-	let first = $derived(
-		blocks
-			.filter((block) => [...block.id.id.toString()].every((v) => v == '0'))
-			.map((block) => ({ block, depth: block.id.id.toString().length }))[0].block
-	);
-
-	$effect(() => {
-		Solver.suggestBlockCoordinates(first, 0, 0);
-		Solver.instance.updateVariables();
-	});
-
-	let inBlock = $state<Block | null>(null);
-	let outBlock = $state<Block | null>(null);
-	let currentConstraint = $state<kiwi.Constraint | null>(null);
+	const appState = setAppState();
+	appState.blocks = data.blocks;
 
 	const onSplit: OnSplit = function (newBlocks: Block[], oldBlock: Block) {
-		const index = blocks.indexOf(oldBlock);
-		blocks.splice(index, 1);
-		blocks = [...blocks.slice(0, index), newBlocks[0], ...blocks.slice(index)];
-		queue = [...queue, ...newBlocks.slice(1)];
+		const index = appState.blocks.indexOf(oldBlock);
+		appState.blocks.splice(index, 1);
+		appState.blocks = [
+			...appState.blocks.slice(0, index),
+			newBlocks[0],
+			...appState.blocks.slice(index)
+		];
 
-		inBlock = newBlocks[0];
-		outBlock = queue[0];
+		appState.blocksQueue = [...appState.blocksQueue, ...newBlocks.slice(1)];
+		appState.blockIn = newBlocks.at(0);
+		appState.blockOut = appState.blocksQueue.at(0);
 
-		const dimension = 'x';
+		if (!appState.blockIn || !appState.blockOut || !appState.firstBlock) return;
 
-		currentConstraint = new kiwi.Constraint(
-			inBlock.coordinates[dimension].plus(-1),
-			kiwi.Operator.Ge,
-			outBlock.coordinates[dimension],
-			kiwi.Strength.required
+		Solver.suggestBlockCoordinates(
+			appState.blockIn,
+			oldBlock.coordinates.x.value(),
+			oldBlock.coordinates.y.value()
 		);
+		Solver.instance.updateVariables();
 
-		Solver.instance.addConstraint(currentConstraint);
-		Solver.suggestBlockCoordinates(first, 0, 0);
+		appState.currentLink = new Link(appState.blockIn, appState.blockOut, 'y', 1);
+
+		Solver.addLink(appState.currentLink);
+		Solver.suggestBlockCoordinates(appState.firstBlock, 0, 0);
+		// TODO - check if first gets updated after blocks update
+		// TODO - fire only if "first" changes
+		// TODO - remove old variables since "old first" does not exist anymore
 		Solver.instance.updateVariables();
 	};
 
@@ -54,59 +51,87 @@
 
 	const handleKeys: Action<Window> = (element) => {
 		element.addEventListener('keydown', function (e) {
+			if (!appState.blockIn || !appState.blockOut || !appState.currentLink || !appState.currentLink)
+				return;
 			if (['ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp'].includes(e.key)) {
-				if (!inBlock || !outBlock) return;
-				if (!currentConstraint) return;
-
-				// TODO - improve
-				const constraints: Record<string, kiwi.Constraint> = {
-					ArrowDown: createDimensionConstraint(inBlock, outBlock, 'y', 1, kiwi.Strength.weak),
-					ArrowUp: createDimensionConstraint(inBlock, outBlock, 'y', -1, kiwi.Strength.weak),
-					ArrowRight: createDimensionConstraint(inBlock, outBlock, 'x', 1, kiwi.Strength.weak),
-					ArrowLeft: createDimensionConstraint(inBlock, outBlock, 'x', -1, kiwi.Strength.weak)
+				e.preventDefault();
+				const linkData: Record<string, { sign: Sign; dimension: Dimension }> = {
+					ArrowDown: { dimension: 'y', sign: 1 },
+					ArrowUp: { dimension: 'y', sign: -1 },
+					ArrowRight: { dimension: 'x', sign: 1 },
+					ArrowLeft: { dimension: 'x', sign: -1 }
 				};
 
-				const newConstraint = constraints[e.key];
-				console.log(newConstraint);
-				Solver.instance.removeConstraint(currentConstraint);
-				Solver.instance.addConstraint(newConstraint);
+				const { dimension, sign } = linkData[e.key];
+				const newLink = new Link(appState.blockIn, appState.blockOut, dimension, sign);
+
+				Solver.removeLink(appState.currentLink);
+				Solver.addLink(newLink);
+				appState.currentLink = newLink;
+
+				if (appState.firstBlock) Solver.suggestBlockCoordinates(appState.firstBlock, 0, 0);
 				Solver.instance.updateVariables();
-				updateBounds([...blocks, outBlock]);
+				// updateBounds([...blocks, outBlock]);
 
-				currentConstraint = newConstraint;
-
-				redrawKey = uuidv7();
+				redrawKey = uuidv7(); // Crucial
+			} else if (e.key == ' ') {
+				appState.blocks.push(appState.blockOut);
+				appState.links.push(appState.currentLink);
+				appState.blocksQueue.splice(0, 1);
+				if (appState.blocksQueue.length === 0) {
+					appState.blockIn = undefined;
+					appState.blockOut = undefined;
+					appState.currentLink = undefined;
+					return;
+				} else {
+					appState.blockIn = appState.blockOut; // TODO - test
+					appState.blockOut = appState.blocksQueue[0];
+					appState.currentLink = new Link(appState.blockIn, appState.blockOut, 'y', 1);
+					Solver.addLink(appState.currentLink);
+					if (appState.firstBlock) Solver.suggestBlockCoordinates(appState.firstBlock, 0, 0);
+					Solver.instance.updateVariables();
+				}
+			} else if (['w', 'a', 's', 'd'].includes(e.key)) {
+				const positions = pipe(
+					[-1, 0, 1].map((c) => c + (appState.blockIn?.coordinates.x.value() ?? 0)),
+					Array.cartesian([-1, 0, 1].map((c) => c + (appState.blockIn?.coordinates.y.value() ?? 0)))
+				);
+				const availableNextNodes = appState.blocks.filter(
+					(b) => b.coordinates.x.value() == appState.blockIn?.coordinates.x.value()
+				);
 			}
 		});
 	};
+
+	// $inspect(currentConstraint);
 </script>
 
-<!-- <svelte:window use:handleKeys /> -->
+<svelte:window use:handleKeys />
 
 {#key redrawKey}
 	<div style="">
 		<div
-			style="position: relative; width: 100vw; height: 800px; overflow: auto; background-color: gainsboro;"
+			style="position: relative; width: 100vw; height: 100vh; overflow: auto; background-color: gainsboro;"
 		>
-			{#each blocks as block (block.id)}
-				{#if !queue.includes(block)}
-					{@const isBlockIn = inBlock == block}
+			{#each appState.blocks as block (block.id)}
+				{#if !appState.blocksQueue.includes(block)}
+					{@const isBlockIn = appState.blockIn == block}
 					<BlockPosition {block} state={isBlockIn ? 'anchor' : 'idle'}>
 						<BlockContent {block} {onSplit} />
 					</BlockPosition>
 				{/if}
 			{/each}
 
-			{#if outBlock}
-				<BlockPosition block={outBlock} state="positioning">
-					<BlockContent block={outBlock} {onSplit} />
+			{#if appState.blockOut}
+				<BlockPosition block={appState.blockOut} state="positioning">
+					<BlockContent block={appState.blockOut} {onSplit} />
 				</BlockPosition>
 			{/if}
 		</div>
 
-		{#if queue.length > 0}
+		{#if appState.blocksQueue.length > 0}
 			<div id="queue" style="background-color: antiquewhite;">
-				{#each queue as block}
+				{#each appState.blocksQueue as block}
 					<div>
 						<p>{block.id.toString()}</p>
 						<p>{block.text}</p>

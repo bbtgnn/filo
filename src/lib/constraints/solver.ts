@@ -1,4 +1,4 @@
-import type { Block } from '$lib/db/schema';
+import type { Block, Link } from '$lib/db/schema';
 import * as kiwi from '@lume/kiwi';
 
 export class Solver {
@@ -28,5 +28,15 @@ export class Solver {
 		if (!Solver.instance.hasEditVariable(variable)) {
 			Solver.instance.addEditVariable(variable, strength);
 		}
+	}
+
+	public static addLink(link: Link) {
+		Solver.instance.addConstraint(link.constraints.main);
+		Solver.instance.addConstraint(link.constraints.secondary);
+	}
+
+	public static removeLink(link: Link) {
+		Solver.instance.removeConstraint(link.constraints.main);
+		Solver.instance.removeConstraint(link.constraints.secondary);
 	}
 }

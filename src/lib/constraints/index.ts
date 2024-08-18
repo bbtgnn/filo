@@ -15,7 +15,7 @@ export function graphDataToConstraints(blocks: Block[], links: Link[]) {
 				O.all,
 				O.map(([blockIn, blockOut]) => [
 					pipe(
-						link.dimension.id.toString() as Dimension,
+						link.dimension,
 						(dimension) =>
 							new kiwi.Constraint(
 								blockIn.coordinates[dimension].plus(1 * link.sign),
@@ -24,7 +24,7 @@ export function graphDataToConstraints(blocks: Block[], links: Link[]) {
 							)
 					),
 					pipe(
-						getPerpendicularDimension(link.dimension.id.toString()),
+						getPerpendicularDimension(link.dimension),
 						(dimension) =>
 							new kiwi.Constraint(
 								blockIn.coordinates[dimension],
@@ -52,10 +52,10 @@ export function updateBounds(blocks: Block[]) {
 	Solver.instance.updateVariables();
 }
 
-type Dimension = 'x' | 'y';
+export type Dimension = 'x' | 'y';
 
 // TODO - this should return all the dimensions that are not
-function getPerpendicularDimension(dimensionId: string): Dimension {
+export function getPerpendicularDimension(dimensionId: string): Dimension {
 	return dimensionId == 'x' ? 'y' : 'x';
 }
 
@@ -168,17 +168,25 @@ function BlockBlockConflictonflictToConstraint(conflict: BlockBlockConflict, mai
 //
 
 // TODO - test
-export function createDimensionConstraint(
+export function createBlockConstraint(
 	blockIn: Block,
 	blockOut: Block,
 	dimension: Dimension,
 	sign: Link['sign'] = 1,
 	strength: number = kiwi.Strength.strong
 ) {
-	return new kiwi.Constraint(
-		blockIn.coordinates[dimension].plus(sign),
-		sign == 1 ? kiwi.Operator.Le : kiwi.Operator.Ge,
-		blockOut.coordinates[dimension],
-		strength
-	);
+	if (sign == 1)
+		return new kiwi.Constraint(
+			blockIn.coordinates[dimension].plus(1),
+			kiwi.Operator.Le,
+			blockOut.coordinates[dimension],
+			kiwi.Strength.required
+		);
+	else
+		return new kiwi.Constraint(
+			blockIn.coordinates[dimension].plus(-1),
+			kiwi.Operator.Ge,
+			blockOut.coordinates[dimension],
+			strength
+		);
 }

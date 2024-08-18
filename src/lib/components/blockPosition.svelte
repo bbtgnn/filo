@@ -27,7 +27,6 @@
 
 	let x = $derived(getCoordinate(block, 'x') * spaceX + offset);
 	let y = $derived(getCoordinate(block, 'y') * spaceY + offset);
-	$inspect(block.id.toString(), x);
 
 	function getCoordinate(block: Block, axis: 'x' | 'y') {
 		return pipe(

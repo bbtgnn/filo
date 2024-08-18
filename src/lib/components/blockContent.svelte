@@ -18,7 +18,6 @@
 			if (['ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp'].includes(e.key)) return;
 			else {
 				e.preventDefault();
-				console.log(e.key);
 				if (e.key == 'Enter') {
 					const selection = window.getSelection();
 					if (selection) pipe(block.split(selection), (newBlocks) => onSplit(newBlocks, block));

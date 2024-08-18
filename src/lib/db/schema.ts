@@ -2,6 +2,7 @@ import { Schema as S } from '@effect/schema';
 import { RecordId as _RecordId, uuidv7 } from 'surrealdb.js';
 import * as kiwi from '@lume/kiwi';
 import { pipe, Option as O, Array as A, String } from 'effect';
+import { getPerpendicularDimension, type Dimension } from '$lib/constraints';
 
 /* */
 
@@ -86,29 +87,51 @@ export type BlockData = typeof Block.Encoded;
 
 /* */
 
-export class Dimension extends S.Class<Dimension>('dimension')({
-	id: RecordId
-}) {}
+// export class Dimension extends S.Class<Dimension>('dimension')({
+// 	id: RecordId
+// }) {}
+
+export const Cnstraint = S.instanceOf(kiwi.Constraint);
+export type Sign = -1 | 1;
 
 /* */
 
-export class Link extends S.Class<Link>('link')({
-	id: RecordId,
-	in: RecordId,
-	out: RecordId,
-	dimension: RecordId,
-	sign: S.Literal(-1, 1)
-}) {
-	static new(data: Omit<LinkData, 'id'>): Link {
-		// TODO - store in db
-		return S.decodeSync(Link)({
-			...data,
-			id: `${Link.identifier}:${uuidv7()}`,
-			in: `${Block.identifier}:${data.in}`,
-			out: `${Block.identifier}:${data.out}`,
-			dimension: `${Dimension.identifier}:${data.dimension}`
-		});
+// TODO - transform in and out into blocks
+export class Link {
+	id: string;
+	in: Block;
+	out: Block;
+	dimension: Dimension;
+	sign: Sign;
+	constraints: {
+		main: kiwi.Constraint;
+		secondary: kiwi.Constraint;
+	};
+
+	constructor(blockIn: Block, blockOut: Block, dimension: Dimension, sign: Sign) {
+		this.in = blockIn;
+		this.out = blockOut;
+		this.dimension = dimension;
+		this.sign = sign;
+		this.constraints = this.getConstraints();
+		this.id = uuidv7();
+	}
+
+	getConstraints() {
+		const perpendicularDimension = getPerpendicularDimension(this.dimension);
+		return {
+			main: new kiwi.Constraint(
+				this.in.coordinates[this.dimension].plus(this.sign),
+				this.sign == -1 ? kiwi.Operator.Ge : kiwi.Operator.Le,
+				this.out.coordinates[this.dimension],
+				kiwi.Strength.required
+			),
+			secondary: new kiwi.Constraint(
+				this.in.coordinates[perpendicularDimension],
+				kiwi.Operator.Eq,
+				this.out.coordinates[perpendicularDimension],
+				kiwi.Strength.weak
+			)
+		};
 	}
 }
-
-export type LinkData = typeof Link.Encoded;
