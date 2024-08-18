@@ -9,4 +9,7 @@
 	<li>
 		<a href="{base}/tests/split-text">Text split</a>
 	</li>
+	<li>
+		<a href="{base}/tests/sample">First test</a>
+	</li>
 </ul>

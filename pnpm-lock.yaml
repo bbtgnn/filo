@@ -14,6 +14,9 @@ importers:
       '@lume/kiwi':
         specifier: ^0.4.3
         version: 0.4.3
+      '@svelte-put/shortcut':
+        specifier: ^3.1.1
+        version: 3.1.1(svelte@5.0.0-next.182)
       '@sveltejs/adapter-static':
         specifier: ^3.0.4
         version: 3.0.4(@sveltejs/kit@2.5.18(@sveltejs/vite-plugin-svelte@3.1.1(svelte@5.0.0-next.182)(vite@5.3.3))(svelte@5.0.0-next.182)(vite@5.3.3))
@@ -450,6 +453,11 @@ packages:
 
   '@sinclair/typebox@0.27.8':
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
+
+  '@svelte-put/shortcut@3.1.1':
+    resolution: {integrity: sha512-2L5EYTZXiaKvbEelVkg5znxqvfZGZai3m97+cAiUBhLZwXnGtviTDpHxOoZBsqz41szlfRMcamW/8o0+fbW3ZQ==}
+    peerDependencies:
+      svelte: ^3.55.0 || ^4.0.0 || ^5.0.0
 
   '@sveltejs/adapter-auto@3.2.2':
     resolution: {integrity: sha512-Mso5xPCA8zgcKrv+QioVlqMZkyUQ5MjDJiEPuG/Z7cV/5tmwV7LmcVWk5tZ+H0NCOV1x12AsoSpt/CwFwuVXMA==}
@@ -2320,6 +2328,10 @@ snapshots:
       zod: 3.23.8
 
   '@sinclair/typebox@0.27.8': {}
+
+  '@svelte-put/shortcut@3.1.1(svelte@5.0.0-next.182)':
+    dependencies:
+      svelte: 5.0.0-next.182
 
   '@sveltejs/adapter-auto@3.2.2(@sveltejs/kit@2.5.18(@sveltejs/vite-plugin-svelte@3.1.1(svelte@5.0.0-next.182)(vite@5.3.3))(svelte@5.0.0-next.182)(vite@5.3.3))':
     dependencies:

@@ -43,6 +43,10 @@ export function graphDataToConstraints(blocks: Block[], links: Link[]) {
 	constraints.forEach((c) => Solver.instance.addConstraint(c));
 	Solver.instance.updateVariables();
 
+	updateBounds(blocks);
+}
+
+export function updateBounds(blocks: Block[]) {
 	setMinBlockByDimension(blocks, 'x');
 	setMinBlockByDimension(blocks, 'y');
 	Solver.instance.updateVariables();
@@ -62,8 +66,11 @@ function setMinBlockByDimension(blocks: Block[], dimension: Dimension) {
 			blocks.sort((a, b) => a.coordinates[dimension].value() - b.coordinates[dimension].value()),
 		A.head,
 		O.map((block) => {
-			Solver.instance.addEditVariable(block.coordinates[dimension], kiwi.Strength.weak);
-			Solver.instance.suggestValue(block.coordinates[dimension], 0);
+			const variable = block.coordinates[dimension];
+			if (!Solver.instance.hasEditVariable(variable)) {
+				Solver.instance.addEditVariable(variable, kiwi.Strength.weak);
+			}
+			Solver.instance.suggestValue(variable, 0);
 		})
 	);
 }
@@ -155,5 +162,23 @@ function BlockBlockConflictonflictToConstraint(conflict: BlockBlockConflict, mai
 				)
 		),
 		O.getOrThrow
+	);
+}
+
+//
+
+// TODO - test
+export function createDimensionConstraint(
+	blockIn: Block,
+	blockOut: Block,
+	dimension: Dimension,
+	sign: Link['sign'] = 1,
+	strength: number = kiwi.Strength.strong
+) {
+	return new kiwi.Constraint(
+		blockIn.coordinates[dimension].plus(sign),
+		sign == 1 ? kiwi.Operator.Le : kiwi.Operator.Ge,
+		blockOut.coordinates[dimension],
+		strength
 	);
 }
