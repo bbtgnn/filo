@@ -7,7 +7,6 @@
 	import { uuidv7 } from 'surrealdb.js';
 	import { setAppState } from '$lib/state/AppState.svelte.js';
 	import { shortcut, type ShortcutEventDetail, type ShortcutTrigger } from '@svelte-put/shortcut';
-	import { Array } from 'effect';
 
 	let { data } = $props();
 
@@ -80,7 +79,6 @@
 
 		appState.blocks.push(appState.blockOut);
 		appState.links.push(appState.currentLink);
-		appState.blocksQueue.splice(0, 1);
 		if (appState.blocksQueue.length === 0) {
 			appState.blockIn = undefined;
 			appState.blockOut = undefined;
@@ -92,9 +90,8 @@
 			appState.currentLink = new Link(appState.blockIn, appState.blockOut, 'y', 1);
 			Solver.addLink(appState.currentLink);
 			Solver.instance.updateVariables();
+			appState.blocksQueue.splice(0, 1);
 		}
-
-		redraw();
 	};
 
 	const moveBlockIn: ShortcutCallback = (detail) => {
