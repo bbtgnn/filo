@@ -5,6 +5,8 @@ import { String, Tuple } from 'effect';
 import { getPerpendicularDimension, type Dimension } from '$lib/constraints';
 import Maybe, { just, nothing } from 'true-myth/maybe';
 import { config } from '$lib/config.js';
+import BlockContent from '$lib/components/blockContent.svelte';
+import { mount } from 'svelte';
 
 /* */
 
@@ -108,8 +110,14 @@ export class Block {
 	}
 
 	get height(): number {
-		if (!this.element) throw new Error('Element not initialized');
-		return this.element.clientHeight;
+		if (this.element) return this.element.clientHeight;
+		else {
+			const target = document.createElement('div');
+			mount(BlockContent, { target, props: { block: this } });
+			const renderedBlock = target.children.item(0);
+			console.log(renderedBlock?.clientHeight);
+			return renderedBlock?.clientHeight ?? config.block.baseHeight;
+		}
 	}
 
 	get width(): number {
@@ -166,10 +174,13 @@ export class Link {
 
 	getConstraints() {
 		const perpendicularDimension = getPerpendicularDimension(this.dimension);
+		console.log(this.in.height);
 		return {
 			main: new kiwi.Constraint(
-				this.in.variables[this.dimension].plus(this.sign),
-				this.sign == -1 ? kiwi.Operator.Ge : kiwi.Operator.Le,
+				this.in.variables[this.dimension]
+					.plus(this.in.size[this.dimension])
+					.plus(config.viewport.defaultGap),
+				kiwi.Operator.Le,
 				this.out.variables[this.dimension],
 				kiwi.Strength.required
 			),
