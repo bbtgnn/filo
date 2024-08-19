@@ -1,7 +1,7 @@
 import { Schema as S } from '@effect/schema';
 import { RecordId, uuidv7 } from 'surrealdb.js';
 import * as kiwi from '@lume/kiwi';
-import { Tuple } from 'effect';
+import { String, Tuple } from 'effect';
 import { getPerpendicularDimension, type Dimension } from '$lib/constraints';
 import Maybe, { just, nothing } from 'true-myth/maybe';
 import { config } from '$lib/config.js';
@@ -30,15 +30,21 @@ export class Block {
 		};
 	}
 
+	// TODO - cleanup
 	split(selection: Selection): Maybe<BlockSplitResult> {
+		console.log(selection);
 		if (selection.isCollapsed) {
 			const cursorIndex = selection.anchorOffset;
-			return this.splitAtIndex(cursorIndex).map(([firstBlock, secondBlock]) => ({
-				in: firstBlock,
-				out: secondBlock,
-				link: new Link(firstBlock, secondBlock, 'y', 1), // TODO - Get from preferences
-				queue: []
-			}));
+			if (cursorIndex === 0 || cursorIndex == this.text.length - 1) {
+				return nothing();
+			} else {
+				return this.splitAtIndex(cursorIndex).map(([firstBlock, secondBlock]) => ({
+					in: firstBlock,
+					out: secondBlock,
+					link: new Link(firstBlock, secondBlock, 'y', 1), // TODO - Get from preferences
+					queue: []
+				}));
+			}
 		} else {
 			const [selectionStart, selectionEnd] = [selection.anchorOffset, selection.focusOffset].sort();
 			if (selectionStart === 0) {
@@ -48,20 +54,26 @@ export class Block {
 					link: new Link(secondBlock, firstBlock, 'y', 1), // TODO - Get from preferences
 					queue: []
 				}));
+			} else if (selectionEnd == this.text.length - 1) {
+				return this.splitAtIndex(selectionStart).map(([firstBlock, secondBlock]) => ({
+					in: firstBlock,
+					out: secondBlock,
+					link: new Link(firstBlock, secondBlock, 'y', 1), // TODO - Get from preferences
+					queue: []
+				}));
 			} else {
-				return this.splitAtIndex(selectionStart).map(([firstBlock, secondAndThirdBlock]) => {
-					const [secondBlock, thirdBlock] = secondAndThirdBlock
-						.splitAtIndex(selectionEnd)
-						.unwrapOrElse(() => {
-							throw new Error('Badly formatted third block');
-						});
-					return {
+				return this.splitAtIndex(selectionStart)
+					.andThen(([firstBlock, secondAndThirdBlock]) =>
+						secondAndThirdBlock
+							.splitAtIndex(selectionEnd - selectionStart)
+							.map(([secondBlock, thirdBlock]) => [firstBlock, secondBlock, thirdBlock] as const)
+					)
+					.map(([firstBlock, secondBlock, thirdBlock]) => ({
 						in: firstBlock,
 						out: secondBlock,
 						link: new Link(firstBlock, secondBlock, 'y', 1), // TODO - Get from preferences
-						queue: [thirdBlock]
-					};
-				});
+						queue: String.isEmpty(thirdBlock.text) ? [] : [thirdBlock]
+					}));
 			}
 		}
 	}
@@ -92,6 +104,22 @@ export class Block {
 		return {
 			x: this.variables.x.value() * spaceX + offsetX,
 			y: this.variables.y.value() * spaceY + offsetY
+		};
+	}
+
+	get height(): number {
+		if (!this.element) throw new Error('Element not initialized');
+		return this.element.clientHeight;
+	}
+
+	get width(): number {
+		return config.block.baseWidth;
+	}
+
+	get size(): Record<Dimension, number> {
+		return {
+			x: this.width,
+			y: this.height
 		};
 	}
 }

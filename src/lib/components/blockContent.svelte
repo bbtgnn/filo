@@ -30,6 +30,7 @@
 
 <div
 	id={block.id.toString()}
+	bind:this={block.element}
 	use:allowOnlyEnter={block}
 	contenteditable="true"
 	style:--p="{config.block.padding}px"
