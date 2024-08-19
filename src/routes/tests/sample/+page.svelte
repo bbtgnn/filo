@@ -11,6 +11,8 @@
 	import BlockCanvas from '$lib/components/blockCanvas.svelte';
 	import Viewport from '$lib/components/viewport.svelte';
 	import LinkComp from '$lib/components/linkComp.svelte';
+	import BlockState from '$lib/components/blockState.svelte';
+	import BlockComp from '$lib/components/blockComp.svelte';
 
 	let { data } = $props();
 
@@ -149,22 +151,21 @@
 			{#each appState.links as link (link.id)}
 				<LinkComp {link} />
 			{/each}
+
+			{#if appState.currentLink}
+				<LinkComp link={appState.currentLink} />
+			{/if}
 		</LinkCanvas>
 
 		<BlockCanvas>
 			{#each appState.blocks as block (block.id)}
 				{#if !appState.blocksQueue.includes(block)}
-					{@const isBlockIn = appState.blockIn == block}
-					<BlockPosition {block} state={isBlockIn ? 'anchor' : 'idle'}>
-						<BlockContent {block} {onSplit} />
-					</BlockPosition>
+					<BlockComp {block} {onSplit} />
 				{/if}
 			{/each}
 
 			{#if appState.blockOut}
-				<BlockPosition block={appState.blockOut} state="positioning">
-					<BlockContent block={appState.blockOut} {onSplit} />
-				</BlockPosition>
+				<BlockComp block={appState.blockOut} {onSplit} />
 			{/if}
 		</BlockCanvas>
 

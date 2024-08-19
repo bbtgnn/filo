@@ -41,7 +41,5 @@
 <style>
 	div {
 		padding: var(--p);
-		border: 1px solid black;
-		background-color: white;
 	}
 </style>
