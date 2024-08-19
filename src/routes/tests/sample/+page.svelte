@@ -7,6 +7,10 @@
 	import { uuidv7 } from 'surrealdb.js';
 	import { setAppState } from '$lib/state/AppState.svelte.js';
 	import { shortcut, type ShortcutEventDetail, type ShortcutTrigger } from '@svelte-put/shortcut';
+	import { config } from '$lib/config.js';
+	import LinkCanvas from '$lib/components/linkCanvas.svelte';
+	import BlockCanvas from '$lib/components/blockCanvas.svelte';
+	import Viewport from '$lib/components/viewport.svelte';
 
 	let { data } = $props();
 
@@ -87,7 +91,7 @@
 		} else {
 			appState.blockIn = appState.blockOut; // TODO - test
 			appState.blockOut = appState.blocksQueue[0];
-			appState.currentLink = new Link(appState.blockIn, appState.blockOut, 'y', 1);
+			appState.currentLink = new Link(appState.blockIn, appState.blockOut, 'y', 1); // TODO - load direction from preferences
 			Solver.addLink(appState.currentLink);
 			Solver.instance.updateVariables();
 			appState.blocksQueue.splice(0, 1);
@@ -115,8 +119,8 @@
 
 		Solver.removeLink(appState.currentLink);
 		appState.blockIn = nextBlock;
-		const d: Dimension = e.key == 'a' || e.key == 'd' ? 'x' : 'y';
-		const s: Sign = e.key == 'a' || e.key == 'w' ? -1 : 1;
+		const d: Dimension = appState.currentLink.dimension;
+		const s: Sign = appState.currentLink.sign;
 		appState.currentLink = new Link(appState.blockIn, appState.blockOut, d, s);
 		Solver.addLink(appState.currentLink);
 		Solver.instance.updateVariables();
@@ -140,10 +144,14 @@
 <svelte:window use:shortcut={{ trigger: commands }} />
 
 {#key redrawKey}
-	<div style="">
-		<div
-			style="position: relative; width: 100vw; height: 100vh; overflow: auto; background-color: gainsboro;"
-		>
+	<Viewport>
+		<LinkCanvas>
+			{#each appState.links as link (link.id)}
+				<line x1="0" y1="80" x2="100" y2="20" stroke="black" />
+			{/each}
+		</LinkCanvas>
+
+		<BlockCanvas>
 			{#each appState.blocks as block (block.id)}
 				{#if !appState.blocksQueue.includes(block)}
 					{@const isBlockIn = appState.blockIn == block}
@@ -158,7 +166,7 @@
 					<BlockContent block={appState.blockOut} {onSplit} />
 				</BlockPosition>
 			{/if}
-		</div>
+		</BlockCanvas>
 
 		{#if appState.blocksQueue.length > 0}
 			<div id="queue" style="background-color: antiquewhite;">
@@ -170,5 +178,5 @@
 				{/each}
 			</div>
 		{/if}
-	</div>
+	</Viewport>
 {/key}
