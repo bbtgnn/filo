@@ -2,23 +2,23 @@ import { Block, Link } from '$lib/db/schema.js';
 
 export const load = async () => {
 	const blocks: Block[] = [
-		Block.new({ id: '0', text: 'ciao' }),
-		Block.new({ id: '1', text: 'ciao' }),
-		Block.new({ id: '2', text: 'ciao' }),
-		Block.new({ id: '3', text: 'ciao' }),
-		Block.new({ id: '4', text: 'ciao' }),
-		Block.new({ id: '5', text: 'ciao' }),
-		Block.new({ id: '6', text: 'ciao' })
+		new Block('0', 'ciao'),
+		new Block('1', 'ciao'),
+		new Block('2', 'ciao'),
+		new Block('3', 'ciao'),
+		new Block('4', 'ciao'),
+		new Block('5', 'ciao'),
+		new Block('6', 'ciao')
 	];
 
 	const links: Link[] = [
-		Link.new({ in: '0', out: '1', dimension: 'x', sign: 1 }),
-		Link.new({ in: '0', out: '2', dimension: 'y', sign: 1 }),
-		Link.new({ in: '2', out: '3', dimension: 'x', sign: 1 }),
-		Link.new({ in: '3', out: '4', dimension: 'x', sign: 1 }),
-		Link.new({ in: '1', out: '4', dimension: 'y', sign: 1 }),
-		Link.new({ in: '0', out: '5', dimension: 'x', sign: -1 }),
-		Link.new({ in: '0', out: '6', dimension: 'y', sign: -1 })
+		new Link(blocks[0], blocks[1], 'x', 1),
+		new Link(blocks[0], blocks[2], 'y', 1),
+		new Link(blocks[2], blocks[3], 'x', 1),
+		new Link(blocks[3], blocks[4], 'x', 1),
+		new Link(blocks[1], blocks[4], 'y', 1),
+		new Link(blocks[0], blocks[5], 'x', -1),
+		new Link(blocks[0], blocks[6], 'y', -1)
 	];
 
 	return {

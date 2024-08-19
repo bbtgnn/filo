@@ -1,5 +1,5 @@
 import { Schema as S } from '@effect/schema';
-import { RecordId as _RecordId, uuidv7 } from 'surrealdb.js';
+import { RecordId, uuidv7 } from 'surrealdb.js';
 import * as kiwi from '@lume/kiwi';
 import { Tuple } from 'effect';
 import { getPerpendicularDimension, type Dimension } from '$lib/constraints';
@@ -8,54 +8,25 @@ import { config } from '$lib/config.js';
 
 /* */
 
-export const RecordId = S.String.pipe(
-	S.transform(S.instanceOf(_RecordId), {
-		encode: recordIdToStringId,
-		decode: stringIdToRecordId
-	})
-);
+export class Block {
+	text: string;
+	id: RecordId;
+	variables: {
+		x: kiwi.Variable;
+		y: kiwi.Variable;
+	};
 
-function recordIdToStringId(recordId: _RecordId) {
-	return `${recordId.tb}:${recordId.id}`;
-}
+	static get dbName() {
+		return 'block' as const;
+	}
 
-function stringIdToRecordId(stringId: string): _RecordId {
-	const parts = stringId.split(':');
-	return new _RecordId(parts[0], parts[1]);
-}
-
-/* */
-
-export const Variable = S.Number.pipe(
-	S.transform(S.instanceOf(kiwi.Variable), {
-		encode: (variable) => variable.value(),
-		decode: () => {
-			// TODO - Pass solver from context!
-			const variable = new kiwi.Variable();
-			// Solver.instance.addEditVariable(variable, kiwi.Strength.weak);
-			// Solver.instance.suggestValue(variable, number);
-			return variable;
-		}
-	})
-);
-
-/* */
-
-export class Block extends S.Class<Block>('block')({
-	text: S.String,
-	id: RecordId,
-	variables: S.Struct({
-		x: Variable,
-		y: Variable
-	})
-}) {
-	static new(data: Omit<BlockData, 'variables'>): Block {
-		// TODO - store in db
-		return S.decodeSync(Block)({
-			...data,
-			id: `${Block.identifier}:${data.id}`,
-			variables: { x: 0, y: 0 }
-		});
+	constructor(id: string, text: string) {
+		this.text = text;
+		this.id = new RecordId(Block.dbName, id);
+		this.variables = {
+			x: new kiwi.Variable(),
+			y: new kiwi.Variable()
+		};
 	}
 
 	split(selection: Selection): Maybe<BlockSplitResult> {
@@ -99,14 +70,11 @@ export class Block extends S.Class<Block>('block')({
 		const chunks = [this.text.slice(0, index), this.text.slice(index)] as const;
 		return just(
 			Tuple.make(
-				Block.new({
-					text: chunks[0],
-					id: this.id.id.toString() + '0' // TODO - refine, mabye some method
-				}),
-				Block.new({
-					text: chunks[1],
-					id: this.id.id.toString() + '1'
-				})
+				new Block(
+					this.id.id.toString() + '0', // TODO - refine, mabye some method
+					chunks[0]
+				),
+				new Block(this.id.id.toString() + '1', chunks[1])
 			)
 		);
 	}
@@ -131,8 +99,6 @@ export type Position = Record<Dimension, number>;
 
 export type BlockSplitResult = { in: Block; out: Block; queue: Block[]; link: Link };
 
-export type BlockData = typeof Block.Encoded;
-
 /* */
 
 // export class Dimension extends S.Class<Dimension>('dimension')({
@@ -155,6 +121,10 @@ export class Link {
 		main: kiwi.Constraint;
 		secondary: kiwi.Constraint;
 	};
+
+	static get dbName() {
+		return 'link' as const;
+	}
 
 	constructor(blockIn: Block, blockOut: Block, dimension: Dimension, sign: Sign) {
 		this.in = blockIn;

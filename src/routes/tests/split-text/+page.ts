@@ -7,7 +7,7 @@ export const load = async () => {
 		textSample,
 		S.split('\n'),
 		A.filter(S.isNonEmpty),
-		A.map((chunk, index) => Block.new({ id: index.toString(), text: chunk }))
+		A.map((chunk, index) => new Block(index.toString(), chunk))
 	);
 	return { blocks };
 };

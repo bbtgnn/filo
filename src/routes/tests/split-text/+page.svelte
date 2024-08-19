@@ -6,10 +6,16 @@
 
 	let blocks = data.blocks;
 
-	const onSplit: OnSplit = function (newBlocks: Block[], oldBlock: Block) {
+	const onSplit: OnSplit = (splitResult, oldBlock) => {
 		const index = blocks.indexOf(oldBlock);
 		blocks.splice(index, 1);
-		blocks = [...blocks.slice(0, index), ...newBlocks, ...blocks.slice(index)];
+		blocks = [
+			...blocks.slice(0, index),
+			splitResult.in,
+			splitResult.out,
+			...splitResult.queue,
+			...blocks.slice(index)
+		];
 	};
 </script>
 
