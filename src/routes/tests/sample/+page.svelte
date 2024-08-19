@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Link, type Block, type Position, type Sign } from '$lib/db/schema.js';
+	import { Link, type Position, type Sign } from '$lib/db/schema.js';
 	import BlockContent, { type OnSplit } from '$lib/components/blockContent.svelte';
 	import BlockPosition from '$lib/components/blockPosition.svelte';
 	import { Solver } from '$lib/constraints/solver.js';
@@ -7,10 +7,10 @@
 	import { uuidv7 } from 'surrealdb.js';
 	import { setAppState } from '$lib/state/AppState.svelte.js';
 	import { shortcut, type ShortcutEventDetail, type ShortcutTrigger } from '@svelte-put/shortcut';
-	import { config } from '$lib/config.js';
 	import LinkCanvas from '$lib/components/linkCanvas.svelte';
 	import BlockCanvas from '$lib/components/blockCanvas.svelte';
 	import Viewport from '$lib/components/viewport.svelte';
+	import LinkComp from '$lib/components/linkComp.svelte';
 
 	let { data } = $props();
 
@@ -147,7 +147,7 @@
 	<Viewport>
 		<LinkCanvas>
 			{#each appState.links as link (link.id)}
-				<line x1="0" y1="80" x2="100" y2="20" stroke="black" />
+				<LinkComp {link} />
 			{/each}
 		</LinkCanvas>
 

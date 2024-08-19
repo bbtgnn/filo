@@ -4,6 +4,7 @@ import * as kiwi from '@lume/kiwi';
 import { Tuple } from 'effect';
 import { getPerpendicularDimension, type Dimension } from '$lib/constraints';
 import Maybe, { just, nothing } from 'true-myth/maybe';
+import { config } from '$lib/config.js';
 
 /* */
 
@@ -112,6 +113,17 @@ export class Block extends S.Class<Block>('block')({
 
 	get position(): Position {
 		return { x: this.variables.x.value(), y: this.variables.y.value() };
+	}
+
+	get coordinates(): Position {
+		const offsetX = config.viewport.width / 2;
+		const offsetY = config.viewport.height / 2;
+		const spaceX = config.block.baseWidth + config.viewport.defaultGap;
+		const spaceY = config.block.baseHeight + config.viewport.defaultGap;
+		return {
+			x: this.variables.x.value() * spaceX + offsetX,
+			y: this.variables.y.value() * spaceY + offsetY
+		};
 	}
 }
 

@@ -3,8 +3,9 @@
 </script>
 
 <script lang="ts">
+	import { config } from '$lib/config';
+
 	import { Block } from '$lib/db/schema';
-	import { pipe, Record as R, Option as O, Array as A } from 'effect';
 	import type { Snippet } from 'svelte';
 
 	//
@@ -16,34 +17,13 @@
 	};
 
 	let { block, children, state }: Props = $props();
-
-	//
-
-	const offset = 400;
-	const width = 400;
-	const height = 300;
-	const spaceX = width + 100;
-	const spaceY = height + 100;
-
-	let x = $derived(getCoordinate(block, 'x') * spaceX + offset);
-	let y = $derived(getCoordinate(block, 'y') * spaceY + offset);
-
-	function getCoordinate(block: Block, axis: 'x' | 'y') {
-		return pipe(
-			block.variables,
-			R.toEntries,
-			A.findFirst(([dimensionId]) => dimensionId.includes(axis)),
-			O.map(([, coordinate]) => coordinate.value()),
-			O.getOrThrow
-		);
-	}
 </script>
 
 <div
-	style:--x="{x}px"
-	style:--y="{y}px"
-	style:--w="{width}px"
-	style:--h="{height}px"
+	style:--x="{block.coordinates.x}px"
+	style:--y="{block.coordinates.y}px"
+	style:--w="{config.block.baseWidth}px"
+	style:--h="{config.block.baseHeight}px"
 	class:state-positioning={state == 'positioning'}
 	class:state-anchor={state == 'anchor'}
 >

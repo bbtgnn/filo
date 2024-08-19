@@ -1,4 +1,5 @@
 <script lang="ts" context="module">
+	import { config } from '$lib/config';
 	import type { Block, BlockSplitResult } from '$lib/db/schema';
 	export type OnSplit = (splitResult: BlockSplitResult, oldBlock: Block) => void;
 </script>
@@ -27,14 +28,20 @@
 	};
 </script>
 
-<div id={block.id.toString()} use:allowOnlyEnter={block} contenteditable="true">
+<div
+	id={block.id.toString()}
+	use:allowOnlyEnter={block}
+	contenteditable="true"
+	style:--p="{config.block.padding}px"
+>
 	{block.text}
 	<slot />
 </div>
 
 <style>
 	div {
-		padding: 20px;
+		padding: var(--p);
 		border: 1px solid black;
+		background-color: white;
 	}
 </style>
