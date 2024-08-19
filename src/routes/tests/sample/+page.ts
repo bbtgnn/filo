@@ -1,5 +1,5 @@
 import textSample from './text-sample.md?raw';
-import { Block } from '$lib/db/schema';
+import { Block } from '$lib/db/schema.svelte';
 import { Solver } from '$lib/constraints/solver';
 
 export const load = async () => {

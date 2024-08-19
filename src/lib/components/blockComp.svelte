@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Block } from '$lib/db/schema';
+	import type { Block } from '$lib/db/schema.svelte';
 	import BlockPosition from './blockPosition.svelte';
 	import BlockState from './blockState.svelte';
 	import BlockContent, { type OnSplit } from './blockContent.svelte';

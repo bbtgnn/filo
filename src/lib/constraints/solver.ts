@@ -1,4 +1,4 @@
-import type { Block, Link } from '$lib/db/schema';
+import type { Block, Link } from '$lib/db/schema.svelte';
 import * as kiwi from '@lume/kiwi';
 
 export class Solver {

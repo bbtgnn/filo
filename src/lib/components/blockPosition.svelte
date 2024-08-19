@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { config } from '$lib/config';
 
-	import { Block } from '$lib/db/schema';
+	import { Block } from '$lib/db/schema.svelte';
 	import type { Snippet } from 'svelte';
 
 	//

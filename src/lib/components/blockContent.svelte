@@ -1,6 +1,6 @@
 <script lang="ts" context="module">
 	import { config } from '$lib/config';
-	import type { Block, BlockSplitResult } from '$lib/db/schema';
+	import type { Block, BlockSplitResult } from '$lib/db/schema.svelte';
 	export type OnSplit = (splitResult: BlockSplitResult, oldBlock: Block) => void;
 </script>
 

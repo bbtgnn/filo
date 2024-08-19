@@ -3,7 +3,7 @@
 </script>
 
 <script lang="ts">
-	import type { Block } from '$lib/db/schema';
+	import type { Block } from '$lib/db/schema.svelte';
 	import { getAppState } from '$lib/state/AppState.svelte';
 	import type { Snippet } from 'svelte';
 

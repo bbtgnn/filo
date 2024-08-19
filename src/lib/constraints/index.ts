@@ -1,4 +1,4 @@
-import type { Block, Link } from '$lib/db/schema';
+import type { Block, Link } from '$lib/db/schema.svelte';
 import * as kiwi from '@lume/kiwi';
 import { Array as A, pipe, Tuple, Option as O, Order } from 'effect';
 import { Solver } from './solver';

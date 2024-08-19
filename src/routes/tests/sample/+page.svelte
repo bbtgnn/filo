@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Link, type Position, type Sign } from '$lib/db/schema.js';
+	import { Link, type Position, type Sign } from '$lib/db/schema.svelte.js';
 	import BlockContent, { type OnSplit } from '$lib/components/blockContent.svelte';
 	import BlockPosition from '$lib/components/blockPosition.svelte';
 	import { Solver } from '$lib/constraints/solver.js';

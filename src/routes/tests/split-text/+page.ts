@@ -1,6 +1,6 @@
 import { pipe, String as S, Array as A } from 'effect';
 import textSample from './text-sample.md?raw';
-import { Block } from '$lib/db/schema';
+import { Block } from '$lib/db/schema.svelte';
 
 export const load = async () => {
 	const blocks: Block[] = pipe(

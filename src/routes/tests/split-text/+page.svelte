@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { Block } from '$lib/db/schema.js';
 	import BlockContent, { type OnSplit } from '$lib/components/blockContent.svelte';
 
 	export let data;

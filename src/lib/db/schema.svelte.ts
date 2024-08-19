@@ -15,6 +15,7 @@ export class Block {
 		x: kiwi.Variable;
 		y: kiwi.Variable;
 	};
+	element = $state<HTMLElement>();
 
 	static get dbName() {
 		return 'block' as const;
