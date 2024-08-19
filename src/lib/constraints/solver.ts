@@ -17,7 +17,7 @@ export class Solver {
 		y: number,
 		strength: number = kiwi.Strength.weak
 	) {
-		const { x: bx, y: by } = block.coordinates;
+		const { x: bx, y: by } = block.variables;
 		Solver.addEditVariable(bx, strength);
 		Solver.instance.suggestValue(bx, x);
 		Solver.addEditVariable(by, strength);
@@ -38,5 +38,12 @@ export class Solver {
 	public static removeLink(link: Link) {
 		Solver.instance.removeConstraint(link.constraints.main);
 		Solver.instance.removeConstraint(link.constraints.secondary);
+	}
+
+	public static getBlockPositionConstraints(block: Block, x: number, y: number) {
+		return [
+			new kiwi.Constraint(block.variables.x, kiwi.Operator.Eq, x, kiwi.Strength.required),
+			new kiwi.Constraint(block.variables.y, kiwi.Operator.Eq, y, kiwi.Strength.required)
+		];
 	}
 }

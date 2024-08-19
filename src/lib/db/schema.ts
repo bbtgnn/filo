@@ -1,8 +1,9 @@
 import { Schema as S } from '@effect/schema';
 import { RecordId as _RecordId, uuidv7 } from 'surrealdb.js';
 import * as kiwi from '@lume/kiwi';
-import { pipe, Option as O, Array as A, String } from 'effect';
+import { Tuple } from 'effect';
 import { getPerpendicularDimension, type Dimension } from '$lib/constraints';
+import Maybe, { just, nothing } from 'true-myth/maybe';
 
 /* */
 
@@ -42,50 +43,81 @@ export const Variable = S.Number.pipe(
 export class Block extends S.Class<Block>('block')({
 	text: S.String,
 	id: RecordId,
-	coordinates: S.Struct({
+	variables: S.Struct({
 		x: Variable,
 		y: Variable
 	})
 }) {
-	static new(data: Omit<BlockData, 'coordinates'>): Block {
+	static new(data: Omit<BlockData, 'variables'>): Block {
 		// TODO - store in db
 		return S.decodeSync(Block)({
 			...data,
 			id: `${Block.identifier}:${data.id}`,
-			coordinates: { x: 0, y: 0 }
+			variables: { x: 0, y: 0 }
 		});
 	}
 
-	split(selection: Selection): Block[] {
-		return pipe(
-			selection.anchorNode?.textContent,
-			O.fromNullable,
-			O.map((textContent) =>
-				pipe(
-					[selection.anchorOffset, selection.focusOffset].sort(),
-					([start, end]) => [
-						textContent.slice(0, start),
-						textContent.slice(start, end),
-						textContent.slice(end)
-					],
-					A.map(String.trim),
-					A.filter(String.isNonEmpty),
-					A.map((text, index) =>
-						Block.new({
-							text,
-							id: this.id.id.toString() + index // TODO - refine
-						})
-					)
-				)
-			),
-			O.getOrThrow
+	split(selection: Selection): Maybe<BlockSplitResult> {
+		if (selection.isCollapsed) {
+			const cursorIndex = selection.anchorOffset;
+			return this.splitAtIndex(cursorIndex).map(([firstBlock, secondBlock]) => ({
+				in: firstBlock,
+				out: secondBlock,
+				link: new Link(firstBlock, secondBlock, 'y', 1), // TODO - Get from preferences
+				queue: []
+			}));
+		} else {
+			const [selectionStart, selectionEnd] = [selection.anchorOffset, selection.focusOffset].sort();
+			if (selectionStart === 0) {
+				return this.splitAtIndex(selectionEnd).map(([firstBlock, secondBlock]) => ({
+					in: secondBlock,
+					out: firstBlock,
+					link: new Link(secondBlock, firstBlock, 'y', 1), // TODO - Get from preferences
+					queue: []
+				}));
+			} else {
+				return this.splitAtIndex(selectionStart).map(([firstBlock, secondAndThirdBlock]) => {
+					const [secondBlock, thirdBlock] = secondAndThirdBlock
+						.splitAtIndex(selectionEnd)
+						.unwrapOrElse(() => {
+							throw new Error('Badly formatted third block');
+						});
+					return {
+						in: firstBlock,
+						out: secondBlock,
+						link: new Link(firstBlock, secondBlock, 'y', 1), // TODO - Get from preferences
+						queue: [thirdBlock]
+					};
+				});
+			}
+		}
+	}
+
+	splitAtIndex(index: number): Maybe<[Block, Block]> {
+		if (index <= 0) return nothing();
+		const chunks = [this.text.slice(0, index), this.text.slice(index)] as const;
+		return just(
+			Tuple.make(
+				Block.new({
+					text: chunks[0],
+					id: this.id.id.toString() + '0' // TODO - refine, mabye some method
+				}),
+				Block.new({
+					text: chunks[1],
+					id: this.id.id.toString() + '1'
+				})
+			)
 		);
 	}
 
-	get position() {
-		return [this.coordinates.x.value(), this.coordinates.y.value()] as [number, number];
+	get position(): Position {
+		return { x: this.variables.x.value(), y: this.variables.y.value() };
 	}
 }
+
+export type Position = Record<Dimension, number>;
+
+export type BlockSplitResult = { in: Block; out: Block; queue: Block[]; link: Link };
 
 export type BlockData = typeof Block.Encoded;
 
@@ -125,15 +157,15 @@ export class Link {
 		const perpendicularDimension = getPerpendicularDimension(this.dimension);
 		return {
 			main: new kiwi.Constraint(
-				this.in.coordinates[this.dimension].plus(this.sign),
+				this.in.variables[this.dimension].plus(this.sign),
 				this.sign == -1 ? kiwi.Operator.Ge : kiwi.Operator.Le,
-				this.out.coordinates[this.dimension],
+				this.out.variables[this.dimension],
 				kiwi.Strength.required
 			),
 			secondary: new kiwi.Constraint(
-				this.in.coordinates[perpendicularDimension],
+				this.in.variables[perpendicularDimension],
 				kiwi.Operator.Eq,
-				this.out.coordinates[perpendicularDimension],
+				this.out.variables[perpendicularDimension],
 				kiwi.Strength.weak
 			)
 		};

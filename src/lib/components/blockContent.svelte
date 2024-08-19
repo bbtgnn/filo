@@ -1,11 +1,10 @@
 <script lang="ts" context="module">
-	import type { Block } from '$lib/db/schema';
-	export type OnSplit = (newBlocks: Block[], oldBlock: Block) => void;
+	import type { Block, BlockSplitResult } from '$lib/db/schema';
+	export type OnSplit = (splitResult: BlockSplitResult, oldBlock: Block) => void;
 </script>
 
 <script lang="ts">
 	import type { Action } from 'svelte/action';
-	import { pipe } from 'effect';
 
 	//
 
@@ -20,7 +19,8 @@
 				e.preventDefault();
 				if (e.key == 'Enter') {
 					const selection = window.getSelection();
-					if (selection) pipe(block.split(selection), (newBlocks) => onSplit(newBlocks, block));
+					if (!selection) return;
+					block.split(selection).match({ Just: (data) => onSplit(data, block), Nothing: () => {} });
 				}
 			}
 		});

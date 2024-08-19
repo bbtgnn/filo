@@ -30,7 +30,7 @@
 
 	function getCoordinate(block: Block, axis: 'x' | 'y') {
 		return pipe(
-			block.coordinates,
+			block.variables,
 			R.toEntries,
 			A.findFirst(([dimensionId]) => dimensionId.includes(axis)),
 			O.map(([, coordinate]) => coordinate.value()),

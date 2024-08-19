@@ -1,5 +1,6 @@
 import type { Block, Link } from '$lib/db/schema';
 import { getContext, setContext } from 'svelte';
+import * as kiwi from '@lume/kiwi';
 
 //
 
@@ -7,19 +8,11 @@ export class AppState {
 	blocks = $state<Block[]>([]);
 	links = $state<Link[]>([]);
 	blocksQueue = $state<Block[]>([]);
+	originConstraints = $state<kiwi.Constraint[]>([]);
 
 	blockIn = $state<Block | undefined>(undefined);
 	blockOut = $state<Block | undefined>(undefined);
 	currentLink = $state<Link | undefined>(undefined);
-
-	firstBlock = $derived(this.getFirstBlock(this.blocks));
-
-	getFirstBlock(blocks: Block[]) {
-		return blocks
-			.filter((block) => [...block.id.id.toString()].every((v) => v == '0'))
-			.map((block) => ({ block, depth: block.id.id.toString().length }))
-			.at(0)?.block;
-	}
 
 	constructor() {}
 }

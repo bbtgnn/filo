@@ -18,18 +18,18 @@ export function graphDataToConstraints(blocks: Block[], links: Link[]) {
 						link.dimension,
 						(dimension) =>
 							new kiwi.Constraint(
-								blockIn.coordinates[dimension].plus(1 * link.sign),
+								blockIn.variables[dimension].plus(1 * link.sign),
 								link.sign == 1 ? kiwi.Operator.Le : kiwi.Operator.Ge, // TODO - test
-								blockOut.coordinates[dimension]
+								blockOut.variables[dimension]
 							)
 					),
 					pipe(
 						getPerpendicularDimension(link.dimension),
 						(dimension) =>
 							new kiwi.Constraint(
-								blockIn.coordinates[dimension],
+								blockIn.variables[dimension],
 								kiwi.Operator.Eq,
-								blockOut.coordinates[dimension],
+								blockOut.variables[dimension],
 								kiwi.Strength.weak
 							)
 					)
@@ -63,10 +63,10 @@ function setMinBlockByDimension(blocks: Block[], dimension: Dimension) {
 	pipe(
 		blocks,
 		(blocks) =>
-			blocks.sort((a, b) => a.coordinates[dimension].value() - b.coordinates[dimension].value()),
+			blocks.sort((a, b) => a.variables[dimension].value() - b.variables[dimension].value()),
 		A.head,
 		O.map((block) => {
-			const variable = block.coordinates[dimension];
+			const variable = block.variables[dimension];
 			if (!Solver.instance.hasEditVariable(variable)) {
 				Solver.instance.addEditVariable(variable, kiwi.Strength.weak);
 			}
@@ -93,8 +93,8 @@ export function findConflictingBlocks({ blocks }: Context): BlockBlockConflict[]
 		A.filter(([b1, b2]) => b1 != b2),
 		A.filter(([b1, b2]) => {
 			return (
-				b1.coordinates.x.value() == b2.coordinates.x.value() &&
-				b1.coordinates.y.value() == b2.coordinates.y.value()
+				b1.variables.x.value() == b2.variables.x.value() &&
+				b1.variables.y.value() == b2.variables.y.value()
 			);
 		}),
 		A.map(A.sortWith((block) => block.id.toString(), Order.string)),
@@ -156,9 +156,9 @@ function BlockBlockConflictonflictToConstraint(conflict: BlockBlockConflict, mai
 		O.map(
 			([b1, b2]) =>
 				new kiwi.Constraint(
-					b1.coordinates[mainAxis].plus(1),
+					b1.variables[mainAxis].plus(1),
 					kiwi.Operator.Le,
-					b2.coordinates[mainAxis]
+					b2.variables[mainAxis]
 				)
 		),
 		O.getOrThrow
@@ -177,16 +177,16 @@ export function createBlockConstraint(
 ) {
 	if (sign == 1)
 		return new kiwi.Constraint(
-			blockIn.coordinates[dimension].plus(1),
+			blockIn.variables[dimension].plus(1),
 			kiwi.Operator.Le,
-			blockOut.coordinates[dimension],
+			blockOut.variables[dimension],
 			kiwi.Strength.required
 		);
 	else
 		return new kiwi.Constraint(
-			blockIn.coordinates[dimension].plus(-1),
+			blockIn.variables[dimension].plus(-1),
 			kiwi.Operator.Ge,
-			blockOut.coordinates[dimension],
+			blockOut.variables[dimension],
 			strength
 		);
 }
