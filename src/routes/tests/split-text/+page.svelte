@@ -19,5 +19,5 @@
 </script>
 
 {#each blocks as block (block.id)}
-	<BlockContent {block} />
+	<BlockContent {block} {onSplit} />
 {/each}

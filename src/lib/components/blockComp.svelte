@@ -2,17 +2,18 @@
 	import type { Block } from '$lib/db/schema.svelte';
 	import BlockPosition from './blockPosition.svelte';
 	import BlockState from './blockState.svelte';
-	import BlockContent from './blockContent.svelte';
+	import BlockContent, { type OnSplit } from './blockContent.svelte';
 
 	type Props = {
 		block: Block;
+		onSplit: OnSplit;
 	};
 
-	let { block }: Props = $props();
+	let { block, onSplit }: Props = $props();
 </script>
 
 <BlockPosition {block}>
 	<BlockState {block}>
-		<BlockContent {block} />
+		<BlockContent {block} {onSplit} />
 	</BlockState>
 </BlockPosition>
