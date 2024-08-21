@@ -48,6 +48,7 @@
 		"graphology-layout-force": "^0.2.4",
 		"graphology-layout-noverlap": "^0.4.2",
 		"graphology-traversal": "^0.3.1",
+		"nanoid": "^5.0.7",
 		"sigma": "3.0.0-beta.26",
 		"surrealdb.js": "1.0.0-beta.9",
 		"surrealdb.wasm": "1.0.0-beta.12",

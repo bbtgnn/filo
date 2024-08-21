@@ -1,5 +1,5 @@
 <script lang="ts" context="module">
-	import type { Block, BlockSplitResult } from '$lib/db/schema.svelte';
+	import { Block, type BlockSplitResult } from '$lib/data-model/block.svelte';
 	export type OnSplit = (splitResult: BlockSplitResult, oldBlock: Block) => void;
 </script>
 
@@ -33,8 +33,7 @@
 </script>
 
 <div
-	id={block.id.toString()}
-	bind:this={block.element}
+	id={block.ids.content}
 	use:allowOnlyEnter={block}
 	contenteditable="true"
 	style:--p="{config.block.padding}px"

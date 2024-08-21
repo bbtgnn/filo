@@ -1,23 +1,23 @@
-import { Schema as S } from '@effect/schema';
-import { RecordId, uuidv7 } from 'surrealdb.js';
+import { RecordId } from 'surrealdb.js';
 import * as kiwi from '@lume/kiwi';
-import { String, Tuple } from 'effect';
-import { getPerpendicularDimension, type Dimension } from '$lib/constraints';
+import { pipe, Record, String, Tuple } from 'effect';
+import { type Dimension } from '$lib/constraints';
 import Maybe, { just, nothing } from 'true-myth/maybe';
 import { config } from '$lib/config.js';
-import BlockContent from '$lib/components/blockContent.svelte';
-import { mount } from 'svelte';
+import { Link } from './link.svelte';
 
-/* */
+//
 
 export class Block {
 	text: string;
-	id: RecordId;
 	variables: {
 		x: kiwi.Variable;
 		y: kiwi.Variable;
 	};
-	element = $state<HTMLElement>();
+	id: RecordId;
+
+	parentHtmlElement = $state<HTMLElement | null>(null);
+	// element = $state<HTMLElement>();
 
 	static get dbName() {
 		return 'block' as const;
@@ -29,6 +29,14 @@ export class Block {
 		this.variables = {
 			x: new kiwi.Variable(),
 			y: new kiwi.Variable()
+		};
+	}
+
+	get ids() {
+		return {
+			position: `block-position-${this.id.toString()}`,
+			state: `block-state-${this.id.toString()}`,
+			content: `block-content-${this.id.toString()}`
 		};
 	}
 
@@ -107,13 +115,8 @@ export class Block {
 	}
 
 	get height(): number {
-		if (this.element) return this.element.clientHeight;
-		else {
-			const target = document.createElement('div');
-			mount(BlockContent, { target, props: { block: this } });
-			const renderedBlock = target.children.item(0);
-			return renderedBlock?.clientHeight ?? config.block.baseHeight;
-		}
+		if (this.elements.content) return this.elements.content.clientHeight;
+		else return config.block.baseHeight;
 	}
 
 	get width(): number {
@@ -127,70 +130,18 @@ export class Block {
 		};
 	}
 
+	get elements() {
+		return pipe(
+			this.ids,
+			Record.map((elementId) => document.getElementById(elementId))
+		);
+	}
+
 	scrollIntoView() {
-		this.element?.scrollIntoView({ block: 'center', inline: 'center' });
+		this.elements.position?.scrollIntoView({ block: 'center', inline: 'center' });
 	}
 }
 
 export type Position = Record<Dimension, number>;
 
 export type BlockSplitResult = { in: Block; out: Block; queue: Block[]; link: Link };
-
-/* */
-
-// export class Dimension extends S.Class<Dimension>('dimension')({
-// 	id: RecordId
-// }) {}
-
-export const Cnstraint = S.instanceOf(kiwi.Constraint);
-export type Sign = -1 | 1;
-
-/* */
-
-// TODO - transform in and out into blocks
-export class Link {
-	id: string;
-	in: Block;
-	out: Block;
-	dimension: Dimension;
-	sign: Sign;
-	constraints: {
-		main: kiwi.Constraint;
-		secondary: kiwi.Constraint;
-	};
-
-	static get dbName() {
-		return 'link' as const;
-	}
-
-	constructor(blockIn: Block, blockOut: Block, dimension: Dimension, sign: Sign) {
-		this.in = blockIn;
-		this.out = blockOut;
-		this.dimension = dimension;
-		this.sign = sign;
-		this.constraints = this.getConstraints();
-		this.id = uuidv7();
-	}
-
-	getConstraints() {
-		const perpendicularDimension = getPerpendicularDimension(this.dimension);
-		const mainBlock: 'in' | 'out' = this.sign == 1 ? 'in' : 'out';
-		const secondaryBlock: 'in' | 'out' = this.sign == 1 ? 'out' : 'in';
-		return {
-			main: new kiwi.Constraint(
-				this[mainBlock].variables[this.dimension]
-					.plus(this[mainBlock].size[this.dimension])
-					.plus(config.viewport.defaultGap),
-				kiwi.Operator.Le,
-				this[secondaryBlock].variables[this.dimension],
-				kiwi.Strength.required
-			),
-			secondary: new kiwi.Constraint(
-				this[mainBlock].variables[perpendicularDimension],
-				kiwi.Operator.Eq,
-				this[secondaryBlock].variables[perpendicularDimension],
-				kiwi.Strength.weak
-			)
-		};
-	}
-}

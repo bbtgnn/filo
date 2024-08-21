@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { config } from '$lib/config';
 
-	import { Block } from '$lib/db/schema.svelte';
+	import { Block } from '$lib/data-model/block.svelte';
 	import type { Snippet } from 'svelte';
 
 	//
@@ -15,6 +15,7 @@
 </script>
 
 <div
+	id={block.ids.position}
 	style:--x="{block.coordinates.x}px"
 	style:--y="{block.coordinates.y}px"
 	style:--w="{config.block.baseWidth}px"

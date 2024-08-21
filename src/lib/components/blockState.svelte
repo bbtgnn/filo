@@ -3,8 +3,8 @@
 </script>
 
 <script lang="ts">
-	import type { Block } from '$lib/db/schema.svelte';
-	import { getAppState } from '$lib/state/AppState.svelte';
+	import type { Block } from '$lib/data-model/block.svelte';
+	import { getFilo } from '$lib/data-model/filo.svelte';
 	import type { Snippet } from 'svelte';
 
 	type Props = {
@@ -14,16 +14,19 @@
 
 	let { block, children }: Props = $props();
 
-	let appState = getAppState();
+	let filo = getFilo();
 
-	let blockState = $derived.by<BlockState>(() => {
-		if (appState.blockIn == block) return 'anchor';
-		else if (appState.blockOut == block) return 'positioning';
-		else return 'idle';
-	});
+	let blockState: BlockState = 'idle';
+
+	// let blockState = $derived.by<BlockState>(() => {
+	// 	if (filo.blockIn == block) return 'anchor';
+	// 	else if (filo.blockOut == block) return 'positioning';
+	// 	else return 'idle';
+	// });
 </script>
 
 <div
+	id={block.ids.state}
 	class:state-anchor={blockState == 'anchor'}
 	class:state-idle={blockState == 'idle'}
 	class:state-positioning={blockState == 'positioning'}
