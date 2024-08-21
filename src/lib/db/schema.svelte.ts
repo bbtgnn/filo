@@ -112,7 +112,6 @@ export class Block {
 			const target = document.createElement('div');
 			mount(BlockContent, { target, props: { block: this } });
 			const renderedBlock = target.children.item(0);
-			console.log(renderedBlock?.clientHeight);
 			return renderedBlock?.clientHeight ?? config.block.baseHeight;
 		}
 	}
