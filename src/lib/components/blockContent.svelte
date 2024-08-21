@@ -1,6 +1,8 @@
 <script lang="ts" context="module">
 	import { config } from '$lib/config';
-	import type { Block, BlockSplitResult } from '$lib/db/schema.svelte';
+	import { Solver } from '$lib/constraints/solver';
+	import { Link, type Block, type BlockSplitResult } from '$lib/db/schema.svelte';
+	import { getAppState } from '$lib/state/AppState.svelte';
 	export type OnSplit = (splitResult: BlockSplitResult, oldBlock: Block) => void;
 </script>
 
@@ -10,7 +12,30 @@
 	//
 
 	export let block: Block;
-	export let onSplit: OnSplit = () => {};
+
+	const appState = getAppState();
+
+	const onSplit: OnSplit = function (data, oldBlock) {
+		appState.blocks.splice(appState.blocks.indexOf(oldBlock), 1);
+		appState.blocks.push(data.in);
+		appState.blocksQueue = data.queue;
+		appState.blockIn = data.in;
+		appState.blockOut = data.out;
+
+		if (!appState.blockIn || !appState.blockOut) return;
+
+		Solver.suggestBlockCoordinates(
+			appState.blockIn,
+			oldBlock.variables.x.value(),
+			oldBlock.variables.y.value()
+		);
+		Solver.instance.updateVariables();
+
+		appState.currentLink = new Link(appState.blockIn, appState.blockOut, 'y', 1);
+
+		Solver.addLink(appState.currentLink);
+		Solver.instance.updateVariables();
+	};
 
 	// TODO - update event when block changes
 	const allowOnlyEnter: Action<HTMLDivElement, Block> = (element, block) => {

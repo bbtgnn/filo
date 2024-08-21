@@ -22,28 +22,6 @@
 	);
 	Solver.instance.updateVariables();
 
-	const onSplit: OnSplit = function (data, oldBlock) {
-		appState.blocks.splice(appState.blocks.indexOf(oldBlock), 1);
-		appState.blocks.push(data.in);
-		appState.blocksQueue = data.queue;
-		appState.blockIn = data.in;
-		appState.blockOut = data.out;
-
-		if (!appState.blockIn || !appState.blockOut) return;
-
-		Solver.suggestBlockCoordinates(
-			appState.blockIn,
-			oldBlock.variables.x.value(),
-			oldBlock.variables.y.value()
-		);
-		Solver.instance.updateVariables();
-
-		appState.currentLink = new Link(appState.blockIn, appState.blockOut, 'y', 1);
-
-		Solver.addLink(appState.currentLink);
-		Solver.instance.updateVariables();
-	};
-
 	//
 
 	let redrawKey = $state(uuidv7());
@@ -160,12 +138,12 @@
 		<BlockCanvas>
 			{#each appState.blocks as block (block.id)}
 				{#if !appState.blocksQueue.includes(block)}
-					<BlockComp {block} {onSplit} />
+					<BlockComp {block} />
 				{/if}
 			{/each}
 
 			{#if appState.blockOut}
-				<BlockComp block={appState.blockOut} {onSplit} />
+				<BlockComp block={appState.blockOut} />
 			{/if}
 		</BlockCanvas>
 
