@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { Link, type Position, type Sign } from '$lib/db/schema.svelte.js';
-	import BlockContent, { type OnSplit } from '$lib/components/blockContent.svelte';
-	import BlockPosition from '$lib/components/blockPosition.svelte';
+	import { type OnSplit } from '$lib/components/blockContent.svelte';
 	import { Solver } from '$lib/constraints/solver.js';
 	import { type Dimension } from '$lib/constraints/index.js';
 	import { uuidv7 } from 'surrealdb.js';
