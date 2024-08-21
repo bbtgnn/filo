@@ -1,16 +1,20 @@
 <script lang="ts" context="module">
-	import { config } from '$lib/config';
 	import type { Block, BlockSplitResult } from '$lib/db/schema.svelte';
 	export type OnSplit = (splitResult: BlockSplitResult, oldBlock: Block) => void;
 </script>
 
 <script lang="ts">
 	import type { Action } from 'svelte/action';
+	import { config } from '$lib/config';
 
 	//
 
-	export let block: Block;
-	export let onSplit: OnSplit = () => {};
+	type Props = {
+		block: Block;
+		onSplit?: OnSplit;
+	};
+
+	let { block, onSplit = () => {} }: Props = $props();
 
 	// TODO - update event when block changes
 	const allowOnlyEnter: Action<HTMLDivElement, Block> = (element, block) => {
@@ -36,7 +40,6 @@
 	style:--p="{config.block.padding}px"
 >
 	{block.text}
-	<slot />
 </div>
 
 <style>

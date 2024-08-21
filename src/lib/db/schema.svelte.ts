@@ -127,6 +127,10 @@ export class Block {
 			y: this.height
 		};
 	}
+
+	scrollIntoView() {
+		this.element?.scrollIntoView({ block: 'center', inline: 'center' });
+	}
 }
 
 export type Position = Record<Dimension, number>;

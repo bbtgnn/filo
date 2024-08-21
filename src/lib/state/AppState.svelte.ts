@@ -14,7 +14,9 @@ export class AppState {
 	blockOut = $state<Block | undefined>(undefined);
 	currentLink = $state<Link | undefined>(undefined);
 
-	constructor() {}
+	constructor() {
+		$effect(() => this.blockIn?.scrollIntoView());
+	}
 }
 
 //
