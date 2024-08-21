@@ -1,4 +1,4 @@
-import { Block, Link } from '$lib/db/schema.js';
+import { Block, Link } from '$lib/db/schema.svelte.js';
 
 export const load = async () => {
 	const blocks: Block[] = [

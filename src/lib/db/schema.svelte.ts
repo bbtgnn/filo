@@ -34,7 +34,6 @@ export class Block {
 
 	// TODO - cleanup
 	split(selection: Selection): Maybe<BlockSplitResult> {
-		console.log(selection);
 		if (selection.isCollapsed) {
 			const cursorIndex = selection.anchorOffset;
 			if (cursorIndex === 0 || cursorIndex == this.text.length - 1) {
@@ -101,11 +100,9 @@ export class Block {
 	get coordinates(): Position {
 		const offsetX = config.viewport.width / 2;
 		const offsetY = config.viewport.height / 2;
-		const spaceX = config.block.baseWidth + config.viewport.defaultGap;
-		const spaceY = config.block.baseHeight + config.viewport.defaultGap;
 		return {
-			x: this.variables.x.value() * spaceX + offsetX,
-			y: this.variables.y.value() * spaceY + offsetY
+			x: this.variables.x.value() + offsetX,
+			y: this.variables.y.value() + offsetY
 		};
 	}
 
@@ -174,20 +171,21 @@ export class Link {
 
 	getConstraints() {
 		const perpendicularDimension = getPerpendicularDimension(this.dimension);
-		console.log(this.in.height);
+		const mainBlock: 'in' | 'out' = this.sign == 1 ? 'in' : 'out';
+		const secondaryBlock: 'in' | 'out' = this.sign == 1 ? 'out' : 'in';
 		return {
 			main: new kiwi.Constraint(
-				this.in.variables[this.dimension]
-					.plus(this.in.size[this.dimension])
+				this[mainBlock].variables[this.dimension]
+					.plus(this[mainBlock].size[this.dimension])
 					.plus(config.viewport.defaultGap),
 				kiwi.Operator.Le,
-				this.out.variables[this.dimension],
+				this[secondaryBlock].variables[this.dimension],
 				kiwi.Strength.required
 			),
 			secondary: new kiwi.Constraint(
-				this.in.variables[perpendicularDimension],
+				this[mainBlock].variables[perpendicularDimension],
 				kiwi.Operator.Eq,
-				this.out.variables[perpendicularDimension],
+				this[secondaryBlock].variables[perpendicularDimension],
 				kiwi.Strength.weak
 			)
 		};

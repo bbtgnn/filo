@@ -11,7 +11,6 @@
 	import BlockCanvas from '$lib/components/blockCanvas.svelte';
 	import Viewport from '$lib/components/viewport.svelte';
 	import LinkComp from '$lib/components/linkComp.svelte';
-	import BlockState from '$lib/components/blockState.svelte';
 	import BlockComp from '$lib/components/blockComp.svelte';
 
 	let { data } = $props();
@@ -45,6 +44,8 @@
 		Solver.addLink(appState.currentLink);
 		Solver.instance.updateVariables();
 	};
+
+	//
 
 	let redrawKey = $state(uuidv7());
 	function redraw() {
