@@ -14,7 +14,7 @@
 	setFilo(filo);
 </script>
 
-<Viewport id={filo.id}>
+<Viewport>
 	<LinkCanvas>
 		{#each filo.links as link (link.id)}
 			<LinkComponent {link} />

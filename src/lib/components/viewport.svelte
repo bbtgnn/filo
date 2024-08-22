@@ -3,7 +3,6 @@
 
 	type Props = {
 		children?: Snippet;
-		id?: string;
 	};
 
 	let { children }: Props = $props();

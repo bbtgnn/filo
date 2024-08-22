@@ -5,6 +5,9 @@ import type { Point } from '$lib/data-model/types';
 import Maybe, { just, nothing } from 'true-myth/maybe';
 import { config } from '$lib/config.js';
 import { Link } from './link.svelte';
+import type { Filo } from './filo.svelte';
+
+export type BlockState = 'idle' | 'in' | 'out' | 'queue';
 
 //
 
@@ -15,9 +18,17 @@ export class Block {
 		y: kiwi.Variable;
 	};
 	id: RecordId;
+	filo: Filo;
 
 	element = $state<HTMLElement | undefined>(undefined);
 	height = $derived.by(() => this.element?.clientHeight ?? config.block.baseHeight);
+
+	status = $derived.by<BlockState>(() => {
+		if (this == this.filo.blockQueue) return 'queue';
+		if (this == this.filo.blockIn) return 'in';
+		if (this == this.filo.blockOut) return 'out';
+		else return 'idle';
+	});
 
 	//
 
@@ -25,7 +36,8 @@ export class Block {
 		return 'block' as const;
 	}
 
-	constructor(id: string, text: string) {
+	constructor(filo: Filo, id: string, text: string) {
+		this.filo = filo;
 		this.text = text;
 		this.id = new RecordId(Block.dbName, id);
 		this.variables = {
@@ -56,8 +68,6 @@ export class Block {
 
 	// TODO - cleanup
 	split(selection: Selection): Maybe<BlockSplitResult> {
-		// console.log(selection);
-		// return nothing();
 		if (selection.isCollapsed) {
 			const cursorIndex = selection.anchorOffset;
 			if (cursorIndex === 0 || cursorIndex == this.text.length - 1) {
@@ -106,10 +116,11 @@ export class Block {
 		return just(
 			Tuple.make(
 				new Block(
+					this.filo,
 					this.id.id.toString() + '0', // TODO - refine, mabye some method
 					chunks[0]
 				),
-				new Block(this.id.id.toString() + '1', chunks[1])
+				new Block(this.filo, this.id.id.toString() + '1', chunks[1])
 			)
 		);
 	}

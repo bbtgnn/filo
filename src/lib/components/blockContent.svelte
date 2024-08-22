@@ -1,12 +1,11 @@
-<script lang="ts" context="module">
+<script context="module" lang="ts">
 	import { Block, type BlockSplitResult } from '$lib/data-model/block.svelte';
-	export type OnSplit = (splitResult: BlockSplitResult, oldBlock: Block) => void;
+	export type OnSplit = (splitResult: BlockSplitResult, oldBlock: Block) => void | Promise<void>;
 </script>
 
 <script lang="ts">
 	import type { Action } from 'svelte/action';
 	import { config } from '$lib/config';
-	import { onMount } from 'svelte';
 
 	//
 
@@ -18,7 +17,7 @@
 	let { block, onSplit = () => {} }: Props = $props();
 
 	// TODO - update event when block changes
-	const allowOnlyEnter: Action<HTMLDivElement, Block> = (element, block) => {
+	const splitOnEnter: Action<HTMLDivElement, Block> = (element, block) => {
 		element.addEventListener('keydown', function (e) {
 			if (['ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp'].includes(e.key)) return;
 			else {
@@ -35,7 +34,7 @@
 
 <div
 	bind:this={block.element}
-	use:allowOnlyEnter={block}
+	use:splitOnEnter={block}
 	contenteditable="true"
 	style:--p="{config.block.padding}px"
 >
