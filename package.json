@@ -1,5 +1,5 @@
 {
-	"name": "filo-surreal",
+	"name": "filo",
 	"version": "0.0.1",
 	"private": true,
 	"scripts": {
@@ -16,11 +16,10 @@
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.28.1",
-		"@sebastianwessel/surql-gen": "^2.3.0",
 		"@sveltejs/adapter-auto": "^3.0.0",
 		"@sveltejs/kit": "^2.0.0",
-		"@sveltejs/vite-plugin-svelte": "^3.0.0",
-		"@types/eslint": "^8.56.7",
+		"@sveltejs/vite-plugin-svelte": "^4.0.0-next.6",
+		"@types/eslint": "^9.6.0",
 		"eslint": "^9.0.0",
 		"eslint-config-prettier": "^9.1.0",
 		"eslint-plugin-svelte": "^2.36.0",
@@ -29,30 +28,20 @@
 		"prettier-plugin-svelte": "^3.1.2",
 		"svelte": "^5.0.0-next.1",
 		"svelte-check": "^3.6.0",
-		"tslib": "^2.4.1",
 		"typescript": "^5.0.0",
-		"typescript-eslint": "^8.0.0-alpha.20",
+		"typescript-eslint": "^8.0.0",
 		"vite": "^5.0.3",
-		"vitest": "^1.2.0"
+		"vitest": "^2.0.0"
 	},
 	"type": "module",
 	"dependencies": {
-		"@effect/schema": "^0.68.17",
 		"@lume/kiwi": "^0.4.3",
 		"@svelte-put/shortcut": "^3.1.1",
 		"@sveltejs/adapter-static": "^3.0.4",
-		"@types/d3": "^7.4.3",
-		"d3": "^7.9.0",
-		"effect": "^3.4.7",
+		"effect": "^3.6.5",
 		"graphology": "^0.25.4",
-		"graphology-layout-force": "^0.2.4",
-		"graphology-layout-noverlap": "^0.4.2",
-		"graphology-traversal": "^0.3.1",
-		"nanoid": "^5.0.7",
-		"sigma": "3.0.0-beta.26",
 		"surrealdb.js": "1.0.0-beta.9",
-		"surrealdb.wasm": "1.0.0-beta.12",
-		"true-myth": "^8.0.0",
-		"vite-plugin-top-level-await": "^1.4.1"
+		"surrealdb.wasm": "1.0.0-beta.15",
+		"true-myth": "^8.0.0"
 	}
 }

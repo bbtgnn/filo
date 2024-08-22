@@ -22,7 +22,7 @@
 	// });
 </script>
 
-<div id={block.ids.state} class="state-idle">
+<div class="state-idle">
 	<!-- <div
 	id={block.ids.state}
 	class:state-anchor={blockState == 'anchor'}

@@ -1,6 +1,6 @@
 import { RecordId } from 'surrealdb.js';
 import * as kiwi from '@lume/kiwi';
-import { String, Tuple } from 'effect';
+import { Tuple } from 'effect';
 import type { Point } from '$lib/data-model/types';
 import Maybe, { just, nothing } from 'true-myth/maybe';
 import { config } from '$lib/config.js';
@@ -16,7 +16,8 @@ export class Block {
 	};
 	id: RecordId;
 
-	element = $state<HTMLElement>();
+	element = $state<HTMLElement | undefined>(undefined);
+	height = $derived.by(() => this.element?.clientHeight ?? config.block.baseHeight);
 
 	//
 
@@ -42,10 +43,6 @@ export class Block {
 		};
 	}
 
-	get height(): number {
-		return this.element?.clientHeight ?? config.block.baseWidth;
-	}
-
 	get width(): number {
 		return this.element?.clientWidth ?? config.block.baseWidth;
 	}
@@ -59,6 +56,8 @@ export class Block {
 
 	// TODO - cleanup
 	split(selection: Selection): Maybe<BlockSplitResult> {
+		// console.log(selection);
+		// return nothing();
 		if (selection.isCollapsed) {
 			const cursorIndex = selection.anchorOffset;
 			if (cursorIndex === 0 || cursorIndex == this.text.length - 1) {
@@ -67,8 +66,7 @@ export class Block {
 				return this.splitAtIndex(cursorIndex).map(([firstBlock, secondBlock]) => ({
 					in: firstBlock,
 					out: secondBlock,
-					link: new Link(firstBlock, secondBlock, 'y', 1), // TODO - Get from preferences
-					queue: []
+					link: new Link(firstBlock, secondBlock, 'y', 1) // TODO - Get from preferences
 				}));
 			}
 		} else {
@@ -77,15 +75,13 @@ export class Block {
 				return this.splitAtIndex(selectionEnd).map(([firstBlock, secondBlock]) => ({
 					in: secondBlock,
 					out: firstBlock,
-					link: new Link(secondBlock, firstBlock, 'y', 1), // TODO - Get from preferences
-					queue: []
+					link: new Link(secondBlock, firstBlock, 'y', 1) // TODO - Get from preferences
 				}));
 			} else if (selectionEnd == this.text.length - 1) {
 				return this.splitAtIndex(selectionStart).map(([firstBlock, secondBlock]) => ({
 					in: firstBlock,
 					out: secondBlock,
-					link: new Link(firstBlock, secondBlock, 'y', 1), // TODO - Get from preferences
-					queue: []
+					link: new Link(firstBlock, secondBlock, 'y', 1) // TODO - Get from preferences
 				}));
 			} else {
 				return this.splitAtIndex(selectionStart)
@@ -98,7 +94,7 @@ export class Block {
 						in: firstBlock,
 						out: secondBlock,
 						link: new Link(firstBlock, secondBlock, 'y', 1), // TODO - Get from preferences
-						queue: String.isEmpty(thirdBlock.text) ? [] : [thirdBlock]
+						queue: thirdBlock
 					}));
 			}
 		}
@@ -123,4 +119,4 @@ export class Block {
 	}
 }
 
-export type BlockSplitResult = { in: Block; out: Block; queue: Block[]; link: Link };
+export type BlockSplitResult = { in: Block; out: Block; queue?: Block; link: Link };
