@@ -51,10 +51,16 @@
 	style:--p="{config.block.padding}px"
 >
 	{block.text}
+	<span
+		style="position: absolute; left: 0; top: 0; padding: 5px; background-color: red; color: white;"
+	>
+		{block.id.toString()}
+	</span>
 </div>
 
 <style>
 	div {
+		position: relative;
 		padding: var(--p);
 	}
 </style>

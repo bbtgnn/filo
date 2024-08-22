@@ -4,7 +4,7 @@ import { Link } from './link.svelte';
 import type { OnSplit } from '$lib/components/blockContent.svelte';
 import { Solver } from './solver';
 import { uuidv7 } from 'surrealdb.js';
-import { DirectedGraph } from 'graphology';
+// import { DirectedGraph } from 'graphology';
 
 //
 
@@ -19,7 +19,7 @@ export class Filo {
 	linkQueue = $state<Link | undefined>(undefined);
 
 	solver: Solver;
-	graph = new DirectedGraph<Block, Link>();
+	// graph = new DirectedGraph<Block, Link>();
 
 	redrawKey = $state('');
 
@@ -31,24 +31,24 @@ export class Filo {
 
 	addBlock(block: Block) {
 		this.blocks.push(block);
-		this.graph.addNode(block.id.toJSON(), block);
+		// this.graph.addNode(block.id.toJSON(), block);
 	}
 
 	removeBlock(block: Block) {
-		this.graph.dropNode(block.id.toString());
+		// this.graph.dropNode(block.id.toString());
 		this.blocks.splice(this.blocks.indexOf(block), 1);
 	}
 
 	addLink(link: Link) {
 		this.links.push(link);
 		this.solver.addLink(link);
-		this.graph.addEdge(link.in.id.toString(), link.out.id.toString(), link);
+		// this.graph.addEdge(link.in.id.toString(), link.out.id.toString(), link);
 	}
 
 	removeLink(link: Link) {
 		this.links.splice(this.links.indexOf(link), 1);
 		this.solver.removeLink(link);
-		this.graph.dropEdge(link.in.id.toString(), link.out.id.toString());
+		// this.graph.dropEdge(link.in.id.toString(), link.out.id.toString());
 	}
 
 	handleBlockSplit: OnSplit = async (splitResult: BlockSplitResult, oldBlock: Block) => {
@@ -59,10 +59,9 @@ export class Filo {
 		this.blockOut = splitResult.out;
 		this.blockQueue = splitResult.queue;
 
-		this.replaceBlock(oldBlock, splitResult.in); // Must be called after storing new blocks in app
-		this.solver.updateVariables();
-
 		await tick(); // Loads blocks and their height, needed for computing variables
+		this.replaceBlock(oldBlock, this.blockIn); // Must be called after storing new blocks in app, not before
+		this.solver.updateVariables();
 
 		const link = new Link(this.blockIn, this.blockOut, 'y', 1);
 		this.addLink(link);
@@ -79,16 +78,10 @@ export class Filo {
 	};
 
 	replaceBlock(oldBlock: Block, newBlock: Block) {
-		const linksToRemove = this.graph
-			.edges(oldBlock.id.toString())
-			.map((graphologyId) => this.graph.getEdgeAttributes(graphologyId))
-			.map((linkAttributes) =>
-				this.links.find((link) => link.id.toString() == linkAttributes.id.toString())
-			)
-			.filter((link) => link instanceof Link);
+		const linksToRemove = this.links.filter((link) => link.in == oldBlock || link.out == oldBlock);
 
 		const newLinks = linksToRemove.map((oldLink) => {
-			if (oldLink.in.id.toString() == newBlock.id.toString()) {
+			if (oldLink.in == oldBlock) {
 				return new Link(newBlock, oldLink.out, oldLink.dimension, oldLink.sign);
 			} else {
 				return new Link(oldLink.in, newBlock, oldLink.dimension, oldLink.sign);
