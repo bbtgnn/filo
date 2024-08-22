@@ -50,9 +50,7 @@ export class Filo {
 		this.blockOut = splitResult.out;
 		this.blockQueue = splitResult.queue;
 
-		this.solver.suggestBlockPosition(this.blockIn, oldBlock.position);
-		this.solver.updateVariables();
-		await tick();
+		await tick(); // Loads blocks and their height
 
 		// TODO - maybe - suggest position
 
@@ -60,13 +58,14 @@ export class Filo {
 		this.addLink(link);
 		this.currentLink = link;
 
-		// if (this.blockQueue) {
-		// 	const link = new Link(this.blockOut, this.blockQueue, 'y', 1);
-		// 	this.addLink(link);
-		// 	this.linkQueue = link;
-		// }
+		if (this.blockQueue) {
+			const link = new Link(this.blockOut, this.blockQueue, 'y', 1);
+			this.addLink(link);
+			this.linkQueue = link;
+		}
 
 		this.solver.updateVariables();
+		this.redraw();
 	};
 
 	redraw() {

@@ -34,5 +34,6 @@
 
 	.state-queue {
 		background-color: ghostwhite;
+		opacity: 50%;
 	}
 </style>

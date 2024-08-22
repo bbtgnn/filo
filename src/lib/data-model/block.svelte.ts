@@ -13,15 +13,16 @@ export type BlockState = 'idle' | 'in' | 'out' | 'queue';
 
 export class Block {
 	text: string;
-	variables: {
-		x: kiwi.Variable;
-		y: kiwi.Variable;
+	variables = {
+		x: new kiwi.Variable(),
+		y: new kiwi.Variable()
 	};
 	id: RecordId;
 	filo: Filo;
 
 	element = $state<HTMLElement | undefined>(undefined);
 	height = $derived.by(() => this.element?.clientHeight ?? config.block.baseHeight);
+	width = $derived.by(() => this.element?.clientWidth ?? config.block.baseWidth);
 
 	status = $derived.by<BlockState>(() => {
 		if (this == this.filo.blockQueue) return 'queue';
@@ -40,10 +41,6 @@ export class Block {
 		this.filo = filo;
 		this.text = text;
 		this.id = new RecordId(Block.dbName, id);
-		this.variables = {
-			x: new kiwi.Variable(),
-			y: new kiwi.Variable()
-		};
 	}
 
 	get position(): Point {
@@ -53,10 +50,6 @@ export class Block {
 			x: this.variables.x.value() + offsetX,
 			y: this.variables.y.value() + offsetY
 		};
-	}
-
-	get width(): number {
-		return this.element?.clientWidth ?? config.block.baseWidth;
 	}
 
 	get size(): Point {

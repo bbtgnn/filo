@@ -16,6 +16,7 @@ export class Solver extends kiwi.Solver {
 
 	addEditVariableSafe(variable: kiwi.Variable, strength: number = kiwi.Strength.weak) {
 		if (!this.hasEditVariable(variable)) {
+			// @ts-expect-error dunno
 			this.addEditVariable(variable, strength);
 		}
 	}
