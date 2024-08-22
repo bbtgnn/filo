@@ -1,5 +1,10 @@
 # Òla
 
+Todo:
+
+- tenere conto che l'altezza del blocco può variare, in quanto se ne potrà modificare lo stile
+  di conseguenza, l'altezza deve essere una kiwi.variable e il valore va suggerito quando l'altezza del blocco cambia
+
 ---
 
 Todo:

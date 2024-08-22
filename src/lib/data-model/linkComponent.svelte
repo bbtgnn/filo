@@ -7,8 +7,8 @@
 	};
 
 	let { link }: Props = $props();
-	let { x: x1, y: y1 } = $derived(link.in.position);
-	let { x: x2, y: y2 } = $derived(link.out.position);
+	let { x: x1, y: y1 } = $derived(link.in.absolutePosition);
+	let { x: x2, y: y2 } = $derived(link.out.absolutePosition);
 	const { padding: p } = config.block;
 </script>
 

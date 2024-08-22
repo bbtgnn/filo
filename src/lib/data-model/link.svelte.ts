@@ -1,9 +1,10 @@
-import { uuidv7 } from 'surrealdb.js';
+import { RecordId } from 'surrealdb.js';
 import * as kiwi from '@lume/kiwi';
 import { type Dimension } from '$lib/data-model/types';
 import { config } from '$lib/config.js';
 import type { Block } from './block.svelte';
 import { getPerpendicularDimension } from '$lib/utils';
+import { nanoid } from 'nanoid';
 
 //
 
@@ -12,7 +13,7 @@ export type Sign = -1 | 1;
 //
 
 export class Link {
-	id: string;
+	id: RecordId;
 	in: Block;
 	out: Block;
 	dimension: Dimension;
@@ -32,7 +33,7 @@ export class Link {
 		this.dimension = dimension;
 		this.sign = sign;
 		this.constraints = this.getConstraints();
-		this.id = uuidv7();
+		this.id = new RecordId(Link.dbName, nanoid(5));
 	}
 
 	getConstraints() {

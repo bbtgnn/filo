@@ -15,7 +15,8 @@ export class Block {
 	text: string;
 	variables = {
 		x: new kiwi.Variable(),
-		y: new kiwi.Variable()
+		y: new kiwi.Variable(),
+		height: new kiwi.Variable()
 	};
 	id: RecordId;
 	filo: Filo;
@@ -44,6 +45,13 @@ export class Block {
 	}
 
 	get position(): Point {
+		return {
+			x: this.variables.x.value(),
+			y: this.variables.y.value()
+		};
+	}
+
+	get absolutePosition(): Point {
 		const offsetX = config.viewport.width / 2;
 		const offsetY = config.viewport.height / 2;
 		return {

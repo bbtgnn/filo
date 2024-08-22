@@ -4,6 +4,7 @@ import { Link } from './link.svelte';
 import type { OnSplit } from '$lib/components/blockContent.svelte';
 import { Solver } from './solver';
 import { uuidv7 } from 'surrealdb.js';
+import { DirectedGraph } from 'graphology';
 
 //
 
@@ -18,6 +19,7 @@ export class Filo {
 	linkQueue = $state<Link | undefined>(undefined);
 
 	solver: Solver;
+	graph = new DirectedGraph<Block, Link>();
 
 	redrawKey = $state('');
 
@@ -29,30 +31,38 @@ export class Filo {
 
 	addBlock(block: Block) {
 		this.blocks.push(block);
+		this.graph.addNode(block.id.toJSON(), block);
+	}
+
+	removeBlock(block: Block) {
+		this.graph.dropNode(block.id.toString());
+		this.blocks.splice(this.blocks.indexOf(block), 1);
 	}
 
 	addLink(link: Link) {
 		this.links.push(link);
 		this.solver.addLink(link);
+		this.graph.addEdge(link.in.id.toString(), link.out.id.toString(), link);
 	}
 
 	removeLink(link: Link) {
 		this.links.splice(this.links.indexOf(link), 1);
 		this.solver.removeLink(link);
+		this.graph.dropEdge(link.in.id.toString(), link.out.id.toString());
 	}
 
 	handleBlockSplit: OnSplit = async (splitResult: BlockSplitResult, oldBlock: Block) => {
-		this.blocks.splice(this.blocks.indexOf(oldBlock), 1);
-		this.blocks.push(splitResult.in, splitResult.out);
-		if (splitResult.queue) this.blocks.push(splitResult.queue);
-
+		this.addBlock(splitResult.in);
+		this.addBlock(splitResult.out);
+		if (splitResult.queue) this.addBlock(splitResult.queue);
 		this.blockIn = splitResult.in;
 		this.blockOut = splitResult.out;
 		this.blockQueue = splitResult.queue;
 
-		await tick(); // Loads blocks and their height
+		this.replaceBlock(oldBlock, splitResult.in); // Must be called after storing new blocks in app
+		this.solver.updateVariables();
 
-		// TODO - maybe - suggest position
+		await tick(); // Loads blocks and their height, needed for computing variables
 
 		const link = new Link(this.blockIn, this.blockOut, 'y', 1);
 		this.addLink(link);
@@ -67,6 +77,28 @@ export class Filo {
 		this.solver.updateVariables();
 		this.redraw();
 	};
+
+	replaceBlock(oldBlock: Block, newBlock: Block) {
+		const linksToRemove = this.graph
+			.edges(oldBlock.id.toString())
+			.map((graphologyId) => this.graph.getEdgeAttributes(graphologyId))
+			.map((linkAttributes) =>
+				this.links.find((link) => link.id.toString() == linkAttributes.id.toString())
+			)
+			.filter((link) => link instanceof Link);
+
+		const newLinks = linksToRemove.map((oldLink) => {
+			if (oldLink.in.id.toString() == newBlock.id.toString()) {
+				return new Link(newBlock, oldLink.out, oldLink.dimension, oldLink.sign);
+			} else {
+				return new Link(oldLink.in, newBlock, oldLink.dimension, oldLink.sign);
+			}
+		});
+
+		for (const link of linksToRemove) this.removeLink(link);
+		for (const link of newLinks) this.addLink(link);
+		this.removeBlock(oldBlock);
+	}
 
 	redraw() {
 		this.redrawKey = uuidv7();

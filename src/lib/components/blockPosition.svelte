@@ -15,8 +15,8 @@
 </script>
 
 <div
-	style:--x="{block.position.x}px"
-	style:--y="{block.position.y}px"
+	style:--x="{block.absolutePosition.x}px"
+	style:--y="{block.absolutePosition.y}px"
 	style:--max-width="{config.block.baseWidth}px"
 >
 	{@render children()}
