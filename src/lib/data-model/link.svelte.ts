@@ -36,9 +36,14 @@ export class Link {
 	}
 
 	getConstraints() {
+		console.log('run');
 		const perpendicularDimension = getPerpendicularDimension(this.dimension);
 		const mainBlock: 'in' | 'out' = this.sign == 1 ? 'in' : 'out';
 		const secondaryBlock: 'in' | 'out' = this.sign == 1 ? 'out' : 'in';
+		console.log(this[mainBlock].size);
+		console.log(this[mainBlock].position);
+		console.log(this[secondaryBlock].size);
+		console.log(this[secondaryBlock].position);
 		return {
 			main: new kiwi.Constraint(
 				this[mainBlock].variables[this.dimension]

@@ -8,13 +8,13 @@ import type { Point } from './types';
 export class Solver extends kiwi.Solver {
 	suggestBlockPosition(block: Block, point: Point, strength: number = kiwi.Strength.weak) {
 		const { x, y } = block.variables;
-		this.addEditVariable(x, strength);
+		this.addEditVariableSafe(x, strength);
 		this.suggestValue(x, point.x);
-		this.addEditVariable(y, strength);
+		this.addEditVariableSafe(y, strength);
 		this.suggestValue(y, point.y);
 	}
 
-	addEditVariable(variable: kiwi.Variable, strength: number = kiwi.Strength.weak) {
+	addEditVariableSafe(variable: kiwi.Variable, strength: number = kiwi.Strength.weak) {
 		if (!this.hasEditVariable(variable)) {
 			this.addEditVariable(variable, strength);
 		}

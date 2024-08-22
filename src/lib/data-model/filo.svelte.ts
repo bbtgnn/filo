@@ -1,8 +1,9 @@
-import { getContext, setContext } from 'svelte';
+import { getContext, setContext, tick } from 'svelte';
 import type { Block, BlockSplitResult } from './block.svelte';
 import { Link } from './link.svelte';
 import type { OnSplit } from '$lib/components/blockContent.svelte';
 import { Solver } from './solver';
+import { uuidv7 } from 'surrealdb.js';
 
 //
 
@@ -17,6 +18,8 @@ export class Filo {
 	linkQueue = $state<Link | undefined>(undefined);
 
 	solver: Solver;
+
+	redrawKey = $state('');
 
 	constructor() {
 		this.solver = new Solver();
@@ -33,16 +36,23 @@ export class Filo {
 		this.solver.addLink(link);
 	}
 
-	handleBlockSplit: OnSplit = (splitResult: BlockSplitResult, oldBlock: Block) => {
+	removeLink(link: Link) {
+		this.links.splice(this.links.indexOf(link), 1);
+		this.solver.removeLink(link);
+	}
+
+	handleBlockSplit: OnSplit = async (splitResult: BlockSplitResult, oldBlock: Block) => {
 		this.blocks.splice(this.blocks.indexOf(oldBlock), 1);
 		this.blocks.push(splitResult.in, splitResult.out);
 		if (splitResult.queue) this.blocks.push(splitResult.queue);
 
-		// TODO - Manage links
-
 		this.blockIn = splitResult.in;
 		this.blockOut = splitResult.out;
 		this.blockQueue = splitResult.queue;
+
+		this.solver.suggestBlockPosition(this.blockIn, oldBlock.position);
+		this.solver.updateVariables();
+		await tick();
 
 		// TODO - maybe - suggest position
 
@@ -50,14 +60,18 @@ export class Filo {
 		this.addLink(link);
 		this.currentLink = link;
 
-		if (this.blockQueue) {
-			const link = new Link(this.blockOut, this.blockQueue, 'y', 1);
-			this.addLink(link);
-			this.linkQueue = link;
-		}
+		// if (this.blockQueue) {
+		// 	const link = new Link(this.blockOut, this.blockQueue, 'y', 1);
+		// 	this.addLink(link);
+		// 	this.linkQueue = link;
+		// }
 
 		this.solver.updateVariables();
 	};
+
+	redraw() {
+		this.redrawKey = uuidv7();
+	}
 }
 
 //
