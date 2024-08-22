@@ -1,7 +1,7 @@
 import { RecordId } from 'surrealdb.js';
 import * as kiwi from '@lume/kiwi';
 import { Tuple } from 'effect';
-import type { Dimension, Point, Size } from '$lib/data-model/types';
+import type { Dimension, Point, Rectangle, Size } from '$lib/data-model/types';
 import Maybe, { just, nothing } from 'true-myth/maybe';
 import { config } from '$lib/config.js';
 import { Link } from './link.svelte';
@@ -71,8 +71,8 @@ export class Block {
 		};
 	}
 
-	updateSize() {
-		this.filo.solver.suggestBlockSize(this, { width: this.width, height: this.height });
+	updateSize(size: Rectangle = { width: this.width, height: this.height }) {
+		this.filo.solver.suggestBlockSize(this, size);
 		this.filo.solver.updateVariables();
 	}
 

@@ -10,7 +10,6 @@
 	};
 
 	let { block, onSplit }: Props = $props();
-	$effect(() => block.updateSize());
 </script>
 
 <BlockPosition {block}>

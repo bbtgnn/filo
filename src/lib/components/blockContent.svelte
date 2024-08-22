@@ -6,6 +6,7 @@
 <script lang="ts">
 	import type { Action } from 'svelte/action';
 	import { config } from '$lib/config';
+	import { untrack } from 'svelte';
 
 	//
 
@@ -15,6 +16,16 @@
 	};
 
 	let { block, onSplit = () => {} }: Props = $props();
+	// TODO - Test
+	$effect(() => {
+		if (block.element) {
+			untrack(() => block).updateSize({
+				// TODO - check if block is not tracked, but block.element yes
+				width: block.element.clientWidth,
+				height: block.element.clientHeight
+			});
+		}
+	});
 
 	// TODO - update event when block changes
 	const splitOnEnter: Action<HTMLDivElement, Block> = (element, block) => {
@@ -33,6 +44,7 @@
 </script>
 
 <div
+	id={block.id.toString()}
 	bind:this={block.element}
 	use:splitOnEnter={block}
 	contenteditable="true"
