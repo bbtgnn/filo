@@ -1,12 +1,11 @@
 import { getContext, mount, setContext } from 'svelte';
 import type { Block } from './block.svelte';
-import type { Link } from './link.svelte';
-import FiloComponent from './filo.component.svelte';
-import BlockComponent from './block.component.svelte';
+import { Link } from './link.svelte';
+import BlockComponent from './blockComponent.svelte';
 import { nanoid } from 'nanoid';
-import * as kiwi from '@lume/kiwi';
 import { Maybe } from 'true-myth';
 import type { OnSplit } from '$lib/components/blockContent.svelte';
+import { Solver } from './solver';
 
 //
 
@@ -29,22 +28,12 @@ export class Filo {
 	parentHtmlElement = $state<HTMLElement | null>(null);
 	htmlElement = $state<HTMLElement | null>(null);
 
-	solver: kiwi.Solver;
+	solver: Solver;
 
-	constructor(target: HTMLElement) {
-		this.mount(target);
-		this.solver = new kiwi.Solver();
+	constructor() {
+		this.solver = new Solver();
 
 		$effect(() => this.blockIn?.scrollIntoView());
-	}
-
-	mount(target: HTMLElement) {
-		this.parentHtmlElement = target;
-		mount(FiloComponent, {
-			target,
-			props: { filo: this }
-		});
-		this.htmlElement = target.querySelector(`#${this.id}`);
 	}
 
 	addBlock(block: Block) {
@@ -57,29 +46,49 @@ export class Filo {
 		);
 	}
 
+	addLink(link: Link) {
+		this.links.push(link);
+		this.solver.addLink(link);
+	}
+
 	getHtmlElement(element: keyof typeof this.ids) {
 		return new Maybe(this.htmlElement?.querySelector(`#${this.ids[element]}`));
 	}
 
 	handleBlockSplit: OnSplit = (splitResult, oldBlock) => {
-		console.log(splitResult, oldBlock);
-		// splitResult;
-		// oldBlock;
+		this.blocks.splice(this.blocks.indexOf(oldBlock), 1);
+		this.blocks.push(splitResult.in);
+
+		// TODO - Manage links
+
+		this.blocksQueue = splitResult.queue;
+		this.blockIn = splitResult.in;
+		this.blockOut = splitResult.out;
+
+		this.solver.suggestBlockPosition(this.blockIn, oldBlock.position);
+		this.solver.updateVariables();
+
+		const link = new Link(this.blockIn, this.blockOut, 'y', 1);
+
+		this.addLink(link);
+		this.currentLink = link;
+
+		this.solver.updateVariables();
 	};
 }
 
 //
 
-const APP_STATE_KEY = Symbol('AppState');
+const FILO_CONTEXT_KEY = Symbol('AppState');
 
-export function initFilo(target: HTMLElement) {
-	return setFilo(new Filo(target));
+export function initFilo() {
+	return setFilo(new Filo());
 }
 
 export function setFilo(filo: Filo) {
-	return setContext(APP_STATE_KEY, filo);
+	return setContext(FILO_CONTEXT_KEY, filo);
 }
 
 export function getFilo() {
-	return getContext<ReturnType<typeof initFilo>>(APP_STATE_KEY);
+	return getContext<ReturnType<typeof initFilo>>(FILO_CONTEXT_KEY);
 }

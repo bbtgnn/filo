@@ -1,17 +1,14 @@
 <script lang="ts">
 	import { config } from '$lib/config';
-	import { getFilo } from '$lib/data-model/filo.svelte';
 	import type { Snippet } from 'svelte';
 
 	//
 
 	let { children }: { children?: Snippet } = $props();
-	const filo = getFilo();
-
 	const { width, height } = config.viewport;
 </script>
 
-<div id={filo.ids.blockCanvas} style:--w="{width}px" style:--h="{height}px">
+<div style:--w="{width}px" style:--h="{height}px">
 	{#if children}
 		{@render children()}
 	{/if}

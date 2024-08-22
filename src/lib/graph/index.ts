@@ -1,7 +1,10 @@
 import { DirectedGraph } from 'graphology';
 import type { Action } from 'svelte/action';
 import Sigma from 'sigma';
-import type { Block, Link } from '$lib/db/schema.svelte';
+import type { Block } from '$lib/data-model/block.svelte';
+import type { Link } from '$lib/data-model/link.svelte';
+
+//
 
 export type Graph = DirectedGraph<Block, Link>;
 

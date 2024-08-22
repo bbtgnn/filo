@@ -6,6 +6,7 @@
 <script lang="ts">
 	import type { Action } from 'svelte/action';
 	import { config } from '$lib/config';
+	import { onMount } from 'svelte';
 
 	//
 
@@ -33,7 +34,7 @@
 </script>
 
 <div
-	id={block.ids.content}
+	bind:this={block.element}
 	use:allowOnlyEnter={block}
 	contenteditable="true"
 	style:--p="{config.block.padding}px"

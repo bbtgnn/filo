@@ -15,10 +15,9 @@
 </script>
 
 <div
-	id={block.ids.position}
-	style:--x="{block.coordinates.x}px"
-	style:--y="{block.coordinates.y}px"
-	style:--w="{config.block.baseWidth}px"
+	style:--x="{block.position.x}px"
+	style:--y="{block.position.y}px"
+	style:--max-width="{config.block.baseWidth}px"
 >
 	{@render children()}
 </div>
@@ -28,6 +27,6 @@
 		position: absolute;
 		left: var(--x);
 		top: var(--y);
-		width: var(--w);
+		max-width: var(--max-width);
 	}
 </style>

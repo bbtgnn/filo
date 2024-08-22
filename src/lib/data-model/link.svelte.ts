@@ -1,8 +1,9 @@
 import { uuidv7 } from 'surrealdb.js';
 import * as kiwi from '@lume/kiwi';
-import { getPerpendicularDimension, type Dimension } from '$lib/constraints';
+import { type Dimension } from '$lib/data-model/types';
 import { config } from '$lib/config.js';
 import type { Block } from './block.svelte';
+import { getPerpendicularDimension } from '$lib/utils';
 
 //
 

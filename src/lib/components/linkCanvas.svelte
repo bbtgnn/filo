@@ -1,17 +1,9 @@
 <script lang="ts">
 	import { config } from '$lib/config';
-	import { getFilo } from '$lib/data-model/filo.svelte';
 	const { width, height } = config.viewport;
-
-	const filo = getFilo();
 </script>
 
-<svg
-	id={filo.ids.linkCanvas}
-	viewBox="0 0 {width} {height}"
-	style:--w="{width}px"
-	style:--h="{height}px"
->
+<svg viewBox="0 0 {width} {height}" style:--w="{width}px" style:--h="{height}px">
 	<slot />
 </svg>
 

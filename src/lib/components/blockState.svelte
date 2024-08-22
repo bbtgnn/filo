@@ -4,7 +4,6 @@
 
 <script lang="ts">
 	import type { Block } from '$lib/data-model/block.svelte';
-	import { getFilo } from '$lib/data-model/filo.svelte';
 	import type { Snippet } from 'svelte';
 
 	type Props = {
@@ -13,8 +12,6 @@
 	};
 
 	let { block, children }: Props = $props();
-
-	let filo = getFilo();
 
 	let blockState: BlockState = 'idle';
 
@@ -25,16 +22,21 @@
 	// });
 </script>
 
-<div
+<div id={block.ids.state} class="state-idle">
+	<!-- <div
 	id={block.ids.state}
 	class:state-anchor={blockState == 'anchor'}
 	class:state-idle={blockState == 'idle'}
 	class:state-positioning={blockState == 'positioning'}
->
+> -->
 	{@render children()}
 </div>
 
 <style>
+	.state-hidden {
+		display: none;
+	}
+
 	.state-idle {
 		background-color: white;
 	}

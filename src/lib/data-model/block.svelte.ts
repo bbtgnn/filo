@@ -1,7 +1,7 @@
 import { RecordId } from 'surrealdb.js';
 import * as kiwi from '@lume/kiwi';
-import { pipe, Record, String, Tuple } from 'effect';
-import { type Dimension } from '$lib/constraints';
+import { String, Tuple } from 'effect';
+import type { Point } from '$lib/data-model/types';
 import Maybe, { just, nothing } from 'true-myth/maybe';
 import { config } from '$lib/config.js';
 import { Link } from './link.svelte';
@@ -16,8 +16,9 @@ export class Block {
 	};
 	id: RecordId;
 
-	parentHtmlElement = $state<HTMLElement | null>(null);
-	// element = $state<HTMLElement>();
+	element = $state<HTMLElement>();
+
+	//
 
 	static get dbName() {
 		return 'block' as const;
@@ -32,11 +33,27 @@ export class Block {
 		};
 	}
 
-	get ids() {
+	get position(): Point {
+		const offsetX = config.viewport.width / 2;
+		const offsetY = config.viewport.height / 2;
 		return {
-			position: `block-position-${this.id.toString()}`,
-			state: `block-state-${this.id.toString()}`,
-			content: `block-content-${this.id.toString()}`
+			x: this.variables.x.value() + offsetX,
+			y: this.variables.y.value() + offsetY
+		};
+	}
+
+	get height(): number {
+		return this.element?.clientHeight ?? config.block.baseWidth;
+	}
+
+	get width(): number {
+		return this.element?.clientWidth ?? config.block.baseWidth;
+	}
+
+	get size(): Point {
+		return {
+			x: this.width,
+			y: this.height
 		};
 	}
 
@@ -101,47 +118,9 @@ export class Block {
 		);
 	}
 
-	get position(): Position {
-		return { x: this.variables.x.value(), y: this.variables.y.value() };
-	}
-
-	get coordinates(): Position {
-		const offsetX = config.viewport.width / 2;
-		const offsetY = config.viewport.height / 2;
-		return {
-			x: this.variables.x.value() + offsetX,
-			y: this.variables.y.value() + offsetY
-		};
-	}
-
-	get height(): number {
-		if (this.elements.content) return this.elements.content.clientHeight;
-		else return config.block.baseHeight;
-	}
-
-	get width(): number {
-		return config.block.baseWidth;
-	}
-
-	get size(): Record<Dimension, number> {
-		return {
-			x: this.width,
-			y: this.height
-		};
-	}
-
-	get elements() {
-		return pipe(
-			this.ids,
-			Record.map((elementId) => document.getElementById(elementId))
-		);
-	}
-
 	scrollIntoView() {
-		this.elements.position?.scrollIntoView({ block: 'center', inline: 'center' });
+		this.element?.scrollIntoView({ block: 'center', inline: 'center' });
 	}
 }
-
-export type Position = Record<Dimension, number>;
 
 export type BlockSplitResult = { in: Block; out: Block; queue: Block[]; link: Link };
