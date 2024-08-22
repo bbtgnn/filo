@@ -3,7 +3,7 @@ import * as kiwi from '@lume/kiwi';
 import { type Dimension } from '$lib/data-model/types';
 import { config } from '$lib/config.js';
 import type { Block } from './block.svelte';
-import { getPerpendicularDimension } from '$lib/utils';
+import { dimensionToSize, getPerpendicularDimension } from '$lib/utils';
 import { nanoid } from 'nanoid';
 
 //
@@ -38,21 +38,23 @@ export class Link {
 
 	getConstraints() {
 		const perpendicularDimension = getPerpendicularDimension(this.dimension);
-		const mainBlock: 'in' | 'out' = this.sign == 1 ? 'in' : 'out';
-		const secondaryBlock: 'in' | 'out' = this.sign == 1 ? 'out' : 'in';
+		const mainBlock = this.sign == 1 ? this.in : this.out;
+		const secondaryBlock = this.sign == 1 ? this.out : this.in;
+		const involvedSize = dimensionToSize(this.dimension);
+
 		return {
 			main: new kiwi.Constraint(
-				this[mainBlock].variables[this.dimension]
-					.plus(this[mainBlock].size[this.dimension])
+				mainBlock.variables[this.dimension]
+					.plus(mainBlock.variables[involvedSize])
 					.plus(config.viewport.defaultGap),
 				kiwi.Operator.Le,
-				this[secondaryBlock].variables[this.dimension],
+				secondaryBlock.variables[this.dimension],
 				kiwi.Strength.required
 			),
 			secondary: new kiwi.Constraint(
-				this[mainBlock].variables[perpendicularDimension],
+				mainBlock.variables[perpendicularDimension],
 				kiwi.Operator.Eq,
-				this[secondaryBlock].variables[perpendicularDimension],
+				secondaryBlock.variables[perpendicularDimension],
 				kiwi.Strength.weak
 			)
 		};

@@ -1,7 +1,7 @@
 import * as kiwi from '@lume/kiwi';
 import type { Link } from './link.svelte';
 import type { Block } from './block.svelte';
-import type { Point } from './types';
+import type { Point, Rectangle } from './types';
 
 //
 
@@ -23,17 +23,6 @@ export class Solver extends kiwi.Solver {
 		this.removeConstraint(link.constraints.secondary);
 	}
 
-	// getBlockPositionConstraints(
-	// 	block: Block,
-	// 	position: Point,
-	// 	strength: number = kiwi.Strength.required
-	// ) {
-	// 	return [
-	// 		new kiwi.Constraint(block.variables.x, kiwi.Operator.Eq, position.x, strength),
-	// 		new kiwi.Constraint(block.variables.y, kiwi.Operator.Eq, position.y, strength)
-	// 	];
-	// }
-
 	suggestVariableValue(
 		variable: kiwi.Variable,
 		value: number,
@@ -47,5 +36,11 @@ export class Solver extends kiwi.Solver {
 		const { x, y } = block.variables;
 		this.suggestVariableValue(x, position.x, strength);
 		this.suggestVariableValue(y, position.y, strength);
+	}
+
+	suggestBlockSize(block: Block, size: Rectangle, strength: number = kiwi.Strength.weak) {
+		const { width, height } = block.variables;
+		this.suggestVariableValue(width, size.width, strength);
+		this.suggestVariableValue(height, size.height, strength);
 	}
 }

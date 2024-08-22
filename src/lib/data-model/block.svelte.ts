@@ -1,7 +1,7 @@
 import { RecordId } from 'surrealdb.js';
 import * as kiwi from '@lume/kiwi';
 import { Tuple } from 'effect';
-import type { Point } from '$lib/data-model/types';
+import type { Dimension, Point, Size } from '$lib/data-model/types';
 import Maybe, { just, nothing } from 'true-myth/maybe';
 import { config } from '$lib/config.js';
 import { Link } from './link.svelte';
@@ -13,10 +13,11 @@ export type BlockState = 'idle' | 'in' | 'out' | 'queue';
 
 export class Block {
 	text: string;
-	variables = {
+	variables: Record<Dimension | Size, kiwi.Variable> = {
 		x: new kiwi.Variable(),
 		y: new kiwi.Variable(),
-		height: new kiwi.Variable()
+		height: new kiwi.Variable(),
+		width: new kiwi.Variable()
 	};
 	id: RecordId;
 	filo: Filo;
@@ -42,6 +43,9 @@ export class Block {
 		this.filo = filo;
 		this.text = text;
 		this.id = new RecordId(Block.dbName, id);
+
+		this.filo.solver.addEditVariableSafe(this.variables.width, kiwi.Strength.strong);
+		this.filo.solver.addEditVariableSafe(this.variables.height, kiwi.Strength.strong);
 	}
 
 	get position(): Point {
@@ -65,6 +69,11 @@ export class Block {
 			x: this.width,
 			y: this.height
 		};
+	}
+
+	updateSize() {
+		this.filo.solver.suggestBlockSize(this, { width: this.width, height: this.height });
+		this.filo.solver.updateVariables();
 	}
 
 	// TODO - cleanup
