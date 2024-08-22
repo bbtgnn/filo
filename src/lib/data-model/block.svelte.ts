@@ -1,6 +1,6 @@
 import { RecordId } from 'surrealdb.js';
 import * as kiwi from '@lume/kiwi';
-import { Tuple } from 'effect';
+import { String, Tuple } from 'effect';
 import type { Dimension, Point, Rectangle, Size } from '$lib/data-model/types';
 import Maybe, { just, nothing } from 'true-myth/maybe';
 import { config } from '$lib/config.js';
@@ -104,18 +104,21 @@ export class Block {
 					link: new Link(firstBlock, secondBlock, 'y', 1) // TODO - Get from preferences
 				}));
 			} else {
-				return this.splitAtIndex(selectionStart)
-					.andThen(([firstBlock, secondAndThirdBlock]) =>
-						secondAndThirdBlock
-							.splitAtIndex(selectionEnd - selectionStart)
-							.map(([secondBlock, thirdBlock]) => [firstBlock, secondBlock, thirdBlock] as const)
-					)
-					.map(([firstBlock, secondBlock, thirdBlock]) => ({
-						in: firstBlock,
-						out: secondBlock,
-						link: new Link(firstBlock, secondBlock, 'y', 1), // TODO - Get from preferences
-						queue: thirdBlock
-					}));
+				const chunks = [
+					this.text.slice(0, selectionStart),
+					this.text.slice(selectionStart, selectionEnd),
+					this.text.slice(selectionEnd)
+				]
+					.filter(String.isNonEmpty)
+					.map(
+						(text, index) => new Block(this.filo, this.id.id.toString() + index.toString(), text)
+					);
+				return just({
+					in: chunks[0],
+					out: chunks[1],
+					link: new Link(chunks[0], chunks[1], 'y', 1), // TODO - Get from preferences
+					queue: chunks[2]
+				});
 			}
 		}
 	}
