@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { config } from '$lib/config';
 
-	import { Block } from '$lib/db/schema.svelte';
+	import { Block } from '$lib/data-model/block.svelte';
 	import type { Snippet } from 'svelte';
 
 	//
@@ -15,9 +15,9 @@
 </script>
 
 <div
-	style:--x="{block.coordinates.x}px"
-	style:--y="{block.coordinates.y}px"
-	style:--w="{config.block.baseWidth}px"
+	style:--x="{block.absolutePosition.x}px"
+	style:--y="{block.absolutePosition.y}px"
+	style:--max-width="{config.block.baseWidth}px"
 >
 	{@render children()}
 </div>
@@ -27,6 +27,6 @@
 		position: absolute;
 		left: var(--x);
 		top: var(--y);
-		width: var(--w);
+		max-width: var(--max-width);
 	}
 </style>

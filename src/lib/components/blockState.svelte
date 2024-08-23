@@ -1,10 +1,5 @@
-<script lang="ts" context="module">
-	export type BlockState = 'idle' | 'positioning' | 'anchor';
-</script>
-
 <script lang="ts">
-	import type { Block } from '$lib/db/schema.svelte';
-	import { getAppState } from '$lib/state/AppState.svelte';
+	import type { Block } from '$lib/data-model/block.svelte';
 	import type { Snippet } from 'svelte';
 
 	type Props = {
@@ -13,20 +8,13 @@
 	};
 
 	let { block, children }: Props = $props();
-
-	let appState = getAppState();
-
-	let blockState = $derived.by<BlockState>(() => {
-		if (appState.blockIn == block) return 'anchor';
-		else if (appState.blockOut == block) return 'positioning';
-		else return 'idle';
-	});
 </script>
 
 <div
-	class:state-anchor={blockState == 'anchor'}
-	class:state-idle={blockState == 'idle'}
-	class:state-positioning={blockState == 'positioning'}
+	class:state-anchor={block.status == 'in'}
+	class:state-idle={block.status == 'idle'}
+	class:state-positioning={block.status == 'out'}
+	class:state-queue={block.status == 'queue'}
 >
 	{@render children()}
 </div>
@@ -42,5 +30,10 @@
 
 	.state-anchor {
 		background-color: lightgoldenrodyellow;
+	}
+
+	.state-queue {
+		background-color: ghostwhite;
+		opacity: 50%;
 	}
 </style>

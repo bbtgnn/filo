@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { config } from '$lib/config';
-	import type { Link } from '$lib/db/schema.svelte';
+	import type { Link } from '$lib/data-model/link.svelte';
 
 	type Props = {
 		link: Link;
 	};
 
 	let { link }: Props = $props();
-	let { x: x1, y: y1 } = $derived(link.in.coordinates);
-	let { x: x2, y: y2 } = $derived(link.out.coordinates);
+	let { x: x1, y: y1 } = $derived(link.in.absolutePosition);
+	let { x: x2, y: y2 } = $derived(link.out.absolutePosition);
 	const { padding: p } = config.block;
 </script>
 
