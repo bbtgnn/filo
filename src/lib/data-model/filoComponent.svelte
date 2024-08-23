@@ -8,6 +8,8 @@
 	import { shortcut, type ShortcutEventDetail, type ShortcutTrigger } from '@svelte-put/shortcut';
 	import type { Dimension, Point, Sign } from './types';
 	import { Link } from './link.svelte';
+	import type { RBushArea } from './solver';
+	import { config } from '$lib/config';
 
 	type Props = {
 		filo?: Filo;
@@ -47,21 +49,33 @@
 		const e = detail.originalEvent;
 		e.preventDefault();
 
-		// TODO - meccanismo per trovare i blocchi in una data direzione
+		console.log(filo.solver.tree);
 
-		const positions: Record<string, Point> = {
-			w: { x: 0, y: -1 },
-			s: { x: 0, y: 1 },
-			a: { x: -1, y: 0 },
-			d: { x: 1, y: 0 }
+		const leftArea: RBushArea = {
+			minX: filo.blockIn.position.x - config.maxSearchDistance,
+			maxX: filo.blockIn.position.x - 10,
+			minY: filo.blockIn.position.y,
+			maxY: filo.blockIn.position.y + filo.blockIn.size.height // TODO - maybe add tolerance
 		};
-		const nextPosition = positions[e.key];
-		const nextBlock = filo.blocks.find(
-			(b) =>
-				b.position.x == filo.blockIn!.position.x + nextPosition.x &&
-				b.position.y == filo.blockIn!.position.y + nextPosition.y
-		);
-		if (!nextBlock) return;
+
+		const res = filo.solver.tree.search(leftArea);
+		console.log(res);
+
+		// // TODO - meccanismo per trovare i blocchi in una data direzione
+
+		// const positions: Record<string, Point> = {
+		// 	w: { x: 0, y: -1 },
+		// 	s: { x: 0, y: 1 },
+		// 	a: { x: -1, y: 0 },
+		// 	d: { x: 1, y: 0 }
+		// };
+		// const nextPosition = positions[e.key];
+		// const nextBlock = filo.blocks.find(
+		// 	(b) =>
+		// 		b.position.x == filo.blockIn!.position.x + nextPosition.x &&
+		// 		b.position.y == filo.blockIn!.position.y + nextPosition.y
+		// );
+		// if (!nextBlock) return;
 
 		// filo.removeLink(filo.currentLink);
 		// filo.blockIn = nextBlock;
@@ -76,6 +90,8 @@
 		if (!filo.blockIn || !filo.blockOut || !filo.currentLink) return;
 		const e = detail.originalEvent;
 		e.preventDefault();
+
+		filo.solver.addBlock(filo.blockOut);
 
 		if (!filo.blockQueue) {
 			filo.blockIn = undefined;

@@ -8,5 +8,7 @@ export const config = {
 		baseWidth: 400,
 		baseHeight: 300,
 		padding: 20
-	}
+	},
+	// TODO - better mame
+	maxSearchDistance: 1000
 };

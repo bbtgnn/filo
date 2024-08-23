@@ -4,6 +4,7 @@ import { Link } from './link.svelte';
 import type { OnSplit } from '$lib/components/blockContent.svelte';
 import { Solver } from './solver';
 import { uuidv7 } from 'surrealdb.js';
+import * as kiwi from '@lume/kiwi';
 // import { DirectedGraph } from 'graphology';
 
 //
@@ -18,6 +19,9 @@ export class Filo {
 	currentLink = $state<Link | undefined>(undefined);
 	linkQueue = $state<Link | undefined>(undefined);
 
+	blockOrigin = $state<Block | undefined>(undefined);
+	blockOriginConstraints = $state<kiwi.Constraint[]>([]);
+
 	solver: Solver;
 	// graph = new DirectedGraph<Block, Link>();
 
@@ -29,14 +33,33 @@ export class Filo {
 		$effect(() => this.blockIn?.scrollIntoView());
 	}
 
-	addBlock(block: Block) {
+	async addBlock(block: Block) {
+		if (this.blocks.length === 0) this.setBlockOrigin(block);
 		this.blocks.push(block);
+		await tick();
+		// this.solver.addBlock(block);
 		// this.graph.addNode(block.id.toJSON(), block);
+	}
+
+	setBlockOrigin(block: Block) {
+		this.blockOrigin = block;
+		this.blockOriginConstraints.forEach((c) => {
+			if (this.solver.hasConstraint(c)) {
+				this.solver.removeConstraint(c);
+			}
+		});
+		this.blockOriginConstraints = [
+			new kiwi.Constraint(block.variables.x, kiwi.Operator.Eq, 0, kiwi.Strength.strong),
+			new kiwi.Constraint(block.variables.y, kiwi.Operator.Eq, 0, kiwi.Strength.strong)
+		];
+		this.blockOriginConstraints.forEach((c) => this.solver.addConstraint(c));
+		this.solver.updateVariables();
 	}
 
 	removeBlock(block: Block) {
 		// this.graph.dropNode(block.id.toString());
 		this.blocks.splice(this.blocks.indexOf(block), 1);
+		this.solver.removeBlock(block);
 	}
 
 	addLink(link: Link) {
@@ -52,12 +75,13 @@ export class Filo {
 	}
 
 	handleBlockSplit: OnSplit = async (splitResult: BlockSplitResult, oldBlock: Block) => {
-		this.addBlock(splitResult.in);
-		this.addBlock(splitResult.out);
-		if (splitResult.queue) this.addBlock(splitResult.queue);
+		await this.addBlock(splitResult.in);
+		await this.addBlock(splitResult.out);
+		if (splitResult.queue) await this.addBlock(splitResult.queue);
 		this.blockIn = splitResult.in;
 		this.blockOut = splitResult.out;
 		this.blockQueue = splitResult.queue;
+		if (oldBlock == this.blockOrigin) this.setBlockOrigin(this.blockIn);
 
 		await tick(); // Loads blocks and their height, needed for computing variables
 		this.replaceBlock(oldBlock, this.blockIn); // Must be called after storing new blocks in app, not before
@@ -90,7 +114,9 @@ export class Filo {
 
 		for (const link of linksToRemove) this.removeLink(link);
 		for (const link of newLinks) this.addLink(link);
+
 		this.removeBlock(oldBlock);
+		this.solver.addBlock(newBlock);
 	}
 
 	redraw() {

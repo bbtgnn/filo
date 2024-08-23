@@ -2,15 +2,28 @@ import * as kiwi from '@lume/kiwi';
 import type { Link } from './link.svelte';
 import type { Block } from './block.svelte';
 import type { Point, Rectangle } from './types';
+import RBush from 'rbush';
 
 //
 
 export class Solver extends kiwi.Solver {
+	tree = new RBush<RBushBlock>();
+
 	addEditVariableSafe(variable: kiwi.Variable, strength: number = kiwi.Strength.weak) {
 		if (!this.hasEditVariable(variable)) {
 			// @ts-expect-error dunno
 			this.addEditVariable(variable, strength);
 		}
+	}
+
+	addBlock(block: Block) {
+		this.tree.insert(blockToRBush(block));
+	}
+
+	removeBlock(block: Block) {
+		this.tree.remove(blockToRBush(block), (a, b) => {
+			return a.id === b.id;
+		});
 	}
 
 	addLink(link: Link) {
@@ -43,4 +56,25 @@ export class Solver extends kiwi.Solver {
 		this.suggestVariableValue(width, size.width, strength);
 		this.suggestVariableValue(height, size.height, strength);
 	}
+}
+
+export type RBushArea = {
+	minX: number;
+	minY: number;
+	maxX: number;
+	maxY: number;
+};
+
+type RBushBlock = RBushArea & {
+	id: string;
+};
+
+function blockToRBush(block: Block): RBushBlock {
+	return {
+		minX: block.position.x,
+		maxX: block.position.x + block.size.width,
+		minY: block.position.y,
+		maxY: block.position.y + block.size.height,
+		id: block.id.toString()
+	};
 }

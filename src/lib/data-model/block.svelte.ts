@@ -33,6 +33,8 @@ export class Block {
 		else return 'idle';
 	});
 
+	isOrigin = $derived.by(() => this.filo.blockOrigin == this);
+
 	//
 
 	static get dbName() {
@@ -64,10 +66,10 @@ export class Block {
 		};
 	}
 
-	get size(): Point {
+	get size(): Rectangle {
 		return {
-			x: this.width,
-			y: this.height
+			width: this.width,
+			height: this.height
 		};
 	}
 

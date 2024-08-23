@@ -6,7 +6,7 @@
 <script lang="ts">
 	import type { Action } from 'svelte/action';
 	import { config } from '$lib/config';
-	import { untrack } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 
 	//
 
@@ -16,6 +16,7 @@
 	};
 
 	let { block, onSplit = () => {} }: Props = $props();
+
 	// TODO - Test
 	$effect(() => {
 		if (block.element) {
@@ -51,11 +52,26 @@
 	style:--p="{config.block.padding}px"
 >
 	{block.text}
+
 	<span
 		style="position: absolute; left: 0; top: 0; padding: 5px; background-color: red; color: white;"
 	>
 		{block.id.toString()}
 	</span>
+
+	<span
+		style="position: absolute; left: 0; bottom: 0; padding: 5px; background-color: green; color: white;"
+	>
+		{JSON.stringify(block.position)}
+	</span>
+
+	{#if block.isOrigin}
+		<span
+			style="position: absolute; right: 0; top: 0; padding: 5px; background-color: blue; color: white;"
+		>
+			Origin
+		</span>
+	{/if}
 </div>
 
 <style>
