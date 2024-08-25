@@ -27,10 +27,10 @@ export class Filo {
 
 	redrawKey = $state('');
 
+	//
+
 	constructor() {
 		this.solver = new Solver();
-
-		$effect(() => this.blockIn?.scrollIntoView());
 	}
 
 	async addBlock(block: Block) {

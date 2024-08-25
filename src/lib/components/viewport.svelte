@@ -10,6 +10,7 @@
 
 	let filo = getFilo();
 	$effect(() => untrack(() => filo.blocks.at(0))?.scrollIntoView());
+	$effect(() => filo.blockIn?.scrollIntoView());
 </script>
 
 <div
