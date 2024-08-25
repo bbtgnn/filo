@@ -93,6 +93,7 @@
 		e.preventDefault();
 
 		filo.blocks.push(filo.blockOut);
+		filo.solver.addBlock(filo.blockOut);
 		filo.links.push(filo.currentLink);
 
 		if (!filo.blockQueue) {
