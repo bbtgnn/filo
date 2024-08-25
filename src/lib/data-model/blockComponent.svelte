@@ -6,10 +6,10 @@
 
 	type Props = {
 		block: Block;
-		onSplit: OnSplit;
+		onSplit?: OnSplit;
 	};
 
-	let { block, onSplit }: Props = $props();
+	let { block, onSplit = () => {} }: Props = $props();
 </script>
 
 <BlockPosition {block}>

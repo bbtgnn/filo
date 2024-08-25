@@ -1,5 +1,5 @@
 import { getContext, setContext, tick } from 'svelte';
-import type { Block, BlockSplitResult } from './block.svelte';
+import { Block, type BlockSplitResult } from './block.svelte';
 import { Link } from './link.svelte';
 import type { OnSplit } from '$lib/components/blockContent.svelte';
 import { Solver } from './solver';
@@ -23,7 +23,6 @@ export class Filo {
 	blockOriginConstraints = $state<kiwi.Constraint[]>([]);
 
 	solver: Solver;
-	// graph = new DirectedGraph<Block, Link>();
 
 	redrawKey = $state('');
 
@@ -33,12 +32,12 @@ export class Filo {
 		this.solver = new Solver();
 	}
 
-	async addBlock(block: Block) {
-		if (this.blocks.length === 0) this.setBlockOrigin(block);
+	loadText(text: string) {
+		if (this.blocks.length > 0) throw new Error('Cannot use loadText if blocks are present');
+		const block = new Block(this, '0', text);
+		this.setBlockOrigin(block);
 		this.blocks.push(block);
-		await tick();
-		// this.solver.addBlock(block);
-		// this.graph.addNode(block.id.toJSON(), block);
+		this.solver.addBlock(block);
 	}
 
 	setBlockOrigin(block: Block) {
@@ -57,44 +56,31 @@ export class Filo {
 	}
 
 	removeBlock(block: Block) {
-		// this.graph.dropNode(block.id.toString());
 		this.blocks.splice(this.blocks.indexOf(block), 1);
 		this.solver.removeBlock(block);
-	}
-
-	addLink(link: Link) {
-		this.links.push(link);
-		this.solver.addLink(link);
-		// this.graph.addEdge(link.in.id.toString(), link.out.id.toString(), link);
 	}
 
 	removeLink(link: Link) {
 		this.links.splice(this.links.indexOf(link), 1);
 		this.solver.removeLink(link);
-		// this.graph.dropEdge(link.in.id.toString(), link.out.id.toString());
 	}
 
 	handleBlockSplit: OnSplit = async (splitResult: BlockSplitResult, oldBlock: Block) => {
-		await this.addBlock(splitResult.in);
-		await this.addBlock(splitResult.out);
-		if (splitResult.queue) await this.addBlock(splitResult.queue);
+		this.replaceBlock(oldBlock, splitResult.in);
 		this.blockIn = splitResult.in;
 		this.blockOut = splitResult.out;
 		this.blockQueue = splitResult.queue;
 		if (oldBlock == this.blockOrigin) this.setBlockOrigin(this.blockIn);
 
 		await tick(); // Loads blocks and their height, needed for computing variables
-		this.replaceBlock(oldBlock, this.blockIn); // Must be called after storing new blocks in app, not before
 		this.solver.updateVariables();
 
-		const link = new Link(this.blockIn, this.blockOut, 'y', 1);
-		this.addLink(link);
-		this.currentLink = link;
+		this.currentLink = new Link(this.blockIn, this.blockOut, 'y', 1);
+		this.solver.addLink(this.currentLink);
 
 		if (this.blockQueue) {
-			const link = new Link(this.blockOut, this.blockQueue, 'y', 1);
-			this.addLink(link);
-			this.linkQueue = link;
+			this.linkQueue = new Link(this.blockOut, this.blockQueue, 'y', 1);
+			this.solver.addLink(this.linkQueue);
 		}
 
 		this.solver.updateVariables();
@@ -113,9 +99,13 @@ export class Filo {
 		});
 
 		for (const link of linksToRemove) this.removeLink(link);
-		for (const link of newLinks) this.addLink(link);
+		for (const link of newLinks) {
+			this.links.push(link);
+			this.solver.addLink(link);
+		}
 
 		this.removeBlock(oldBlock);
+		this.blocks.push(newBlock);
 		this.solver.addBlock(newBlock);
 	}
 

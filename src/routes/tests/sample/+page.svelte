@@ -4,9 +4,8 @@
 	import FiloComponent from '$lib/data-model/filoComponent.svelte';
 	import textSample from './text-sample.txt?raw';
 
-	const filo = new Filo();
-	const block = new Block(filo, '0', textSample);
-	filo.addBlock(block);
+	let filo = new Filo();
+	filo.loadText(textSample);
 </script>
 
-<FiloComponent {filo} />
+<FiloComponent bind:filo />
