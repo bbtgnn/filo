@@ -9,12 +9,7 @@ import RBush from 'rbush';
 export class Solver extends kiwi.Solver {
 	tree = new RBush<RBushBlock>();
 
-	addEditVariableSafe(variable: kiwi.Variable, strength: number = kiwi.Strength.weak) {
-		if (!this.hasEditVariable(variable)) {
-			// @ts-expect-error dunno
-			this.addEditVariable(variable, strength);
-		}
-	}
+	/* Block */
 
 	addBlock(block: Block) {
 		this.tree.insert(blockToRBush(block));
@@ -26,6 +21,13 @@ export class Solver extends kiwi.Solver {
 		});
 	}
 
+	updateBlock(block: Block) {
+		this.removeBlock(block);
+		this.addBlock(block);
+	}
+
+	/* Link */
+
 	addLink(link: Link) {
 		this.addConstraint(link.constraints.main);
 		this.addConstraint(link.constraints.secondary);
@@ -34,15 +36,6 @@ export class Solver extends kiwi.Solver {
 	removeLink(link: Link) {
 		this.removeConstraint(link.constraints.main);
 		this.removeConstraint(link.constraints.secondary);
-	}
-
-	suggestVariableValue(
-		variable: kiwi.Variable,
-		value: number,
-		strength: number = kiwi.Strength.weak
-	) {
-		this.addEditVariableSafe(variable, strength);
-		this.suggestValue(variable, value);
 	}
 
 	suggestBlockPosition(block: Block, position: Point, strength: number = kiwi.Strength.weak) {
@@ -55,6 +48,24 @@ export class Solver extends kiwi.Solver {
 		const { width, height } = block.variables;
 		this.suggestVariableValue(width, size.width, strength);
 		this.suggestVariableValue(height, size.height, strength);
+	}
+
+	/* Variables */
+
+	addEditVariableSafe(variable: kiwi.Variable, strength: number = kiwi.Strength.weak) {
+		if (!this.hasEditVariable(variable)) {
+			// @ts-expect-error dunno
+			this.addEditVariable(variable, strength);
+		}
+	}
+
+	suggestVariableValue(
+		variable: kiwi.Variable,
+		value: number,
+		strength: number = kiwi.Strength.weak
+	) {
+		this.addEditVariableSafe(variable, strength);
+		this.suggestValue(variable, value);
 	}
 }
 

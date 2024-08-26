@@ -10,13 +10,12 @@
 	import { Link } from './link.svelte';
 	import type { RBushArea } from './solver';
 	import { config } from '$lib/config';
-	import { tick } from 'svelte';
 
 	type Props = {
 		filo?: Filo;
 	};
 
-	let { filo = $bindable(new Filo()) }: Props = $props();
+	let { filo = new Filo() }: Props = $props();
 	setFilo(filo);
 
 	//
@@ -38,10 +37,12 @@
 		const { dimension, sign } = linkData[detail.originalEvent.key];
 		const newLink = new Link(filo.blockIn, filo.blockOut, dimension, sign);
 
-		filo.solver.removeLink(filo.currentLink);
-		filo.solver.addLink(newLink);
+		filo.removeLink(filo.currentLink);
+		filo.addLink(newLink);
 		filo.currentLink = newLink;
 		filo.solver.updateVariables();
+		filo.solver.updateBlock(filo.blockOut);
+		if (filo.blockQueue) filo.solver.updateBlock(filo.blockQueue);
 		filo.redraw();
 	};
 
@@ -59,8 +60,8 @@
 			maxY: filo.blockIn.position.y + filo.blockIn.size.height // TODO - maybe add tolerance
 		};
 
-		const res = filo.solver.tree.search(leftArea);
-		console.log(res);
+		// const res = filo.solver.tree.search(leftArea);
+		// console.log(res);
 
 		// // TODO - meccanismo per trovare i blocchi in una data direzione
 
@@ -87,25 +88,25 @@
 		// filo.redraw();
 	};
 
-	const confirmBlockOut: ShortcutCallback = async (detail) => {
+	const confirmBlockOut: ShortcutCallback = (detail) => {
 		if (!filo.blockIn || !filo.blockOut || !filo.currentLink) return;
 		const e = detail.originalEvent;
 		e.preventDefault();
 
-		filo.blocks.push(filo.blockOut);
 		filo.solver.addBlock(filo.blockOut);
-		filo.links.push(filo.currentLink);
 
 		if (!filo.blockQueue) {
 			filo.blockIn = undefined;
 			filo.blockOut = undefined;
 			filo.currentLink = undefined;
+			return;
 		} else {
 			filo.blockIn = filo.blockOut;
 			filo.blockOut = filo.blockQueue;
 			filo.blockQueue = undefined;
 			filo.currentLink = filo.linkQueue;
 			filo.linkQueue = undefined;
+			filo.solver.updateVariables();
 		}
 	};
 
@@ -127,26 +128,12 @@
 			{#each filo.links as link (link.id)}
 				<LinkComponent {link} />
 			{/each}
-
-			{#if filo.currentLink}
-				<LinkComponent link={filo.currentLink} />
-			{/if}
-			{#if filo.linkQueue}
-				<LinkComponent link={filo.linkQueue} />
-			{/if}
 		</LinkCanvas>
 
 		<BlockCanvas>
 			{#each filo.blocks as block (block.id)}
 				<BlockComponent {block} onSplit={filo.handleBlockSplit} />
 			{/each}
-
-			{#if filo.blockOut}
-				<BlockComponent block={filo.blockOut} />
-			{/if}
-			{#if filo.blockQueue}
-				<BlockComponent block={filo.blockQueue} />
-			{/if}
 		</BlockCanvas>
 	</Viewport>
 {/key}

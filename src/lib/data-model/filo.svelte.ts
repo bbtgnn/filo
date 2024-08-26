@@ -1,5 +1,5 @@
 import { getContext, setContext, tick } from 'svelte';
-import { Block, type BlockSplitResult } from './block.svelte';
+import type { Block, BlockSplitResult } from './block.svelte';
 import { Link } from './link.svelte';
 import type { OnSplit } from '$lib/components/blockContent.svelte';
 import { Solver } from './solver';
@@ -32,13 +32,30 @@ export class Filo {
 		this.solver = new Solver();
 	}
 
-	loadText(text: string) {
-		if (this.blocks.length > 0) throw new Error('Cannot use loadText if blocks are present');
-		const block = new Block(this, '0', text);
-		this.setBlockOrigin(block);
+	/* Crun */
+
+	addBlock(block: Block) {
+		if (this.blocks.length === 0) this.setBlockOrigin(block);
 		this.blocks.push(block);
 		this.solver.addBlock(block);
 	}
+
+	removeBlock(block: Block) {
+		this.blocks.splice(this.blocks.indexOf(block), 1);
+		this.solver.removeBlock(block);
+	}
+
+	addLink(link: Link) {
+		this.links.push(link);
+		this.solver.addLink(link);
+	}
+
+	removeLink(link: Link) {
+		this.links.splice(this.links.indexOf(link), 1);
+		this.solver.removeLink(link);
+	}
+
+	/* Block operations */
 
 	setBlockOrigin(block: Block) {
 		this.blockOrigin = block;
@@ -55,18 +72,10 @@ export class Filo {
 		this.solver.updateVariables();
 	}
 
-	removeBlock(block: Block) {
-		this.blocks.splice(this.blocks.indexOf(block), 1);
-		this.solver.removeBlock(block);
-	}
-
-	removeLink(link: Link) {
-		this.links.splice(this.links.indexOf(link), 1);
-		this.solver.removeLink(link);
-	}
-
 	handleBlockSplit: OnSplit = async (splitResult: BlockSplitResult, oldBlock: Block) => {
 		this.replaceBlock(oldBlock, splitResult.in);
+		this.addBlock(splitResult.out);
+		if (splitResult.queue) this.addBlock(splitResult.queue);
 		this.blockIn = splitResult.in;
 		this.blockOut = splitResult.out;
 		this.blockQueue = splitResult.queue;
@@ -75,12 +84,14 @@ export class Filo {
 		await tick(); // Loads blocks and their height, needed for computing variables
 		this.solver.updateVariables();
 
-		this.currentLink = new Link(this.blockIn, this.blockOut, 'y', 1);
-		this.solver.addLink(this.currentLink);
+		const link = new Link(this.blockIn, this.blockOut, 'y', 1);
+		this.addLink(link);
+		this.currentLink = link;
 
 		if (this.blockQueue) {
-			this.linkQueue = new Link(this.blockOut, this.blockQueue, 'y', 1);
-			this.solver.addLink(this.linkQueue);
+			const link = new Link(this.blockOut, this.blockQueue, 'y', 1);
+			this.addLink(link);
+			this.linkQueue = link;
 		}
 
 		this.solver.updateVariables();
@@ -99,15 +110,13 @@ export class Filo {
 		});
 
 		for (const link of linksToRemove) this.removeLink(link);
-		for (const link of newLinks) {
-			this.links.push(link);
-			this.solver.addLink(link);
-		}
+		for (const link of newLinks) this.addLink(link);
 
 		this.removeBlock(oldBlock);
-		this.blocks.push(newBlock);
-		this.solver.addBlock(newBlock);
+		this.addBlock(newBlock);
 	}
+
+	/* Ui */
 
 	redraw() {
 		this.redrawKey = uuidv7();
