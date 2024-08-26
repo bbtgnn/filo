@@ -41,6 +41,8 @@
 		filo.addLink(newLink);
 		filo.currentLink = newLink;
 		filo.solver.updateVariables();
+		filo.solver.updateBlock(filo.blockOut);
+		if (filo.blockQueue) filo.solver.updateBlock(filo.blockQueue);
 		filo.redraw();
 	};
 
@@ -58,8 +60,8 @@
 			maxY: filo.blockIn.position.y + filo.blockIn.size.height // TODO - maybe add tolerance
 		};
 
-		const res = filo.solver.tree.search(leftArea);
-		console.log(res);
+		// const res = filo.solver.tree.search(leftArea);
+		// console.log(res);
 
 		// // TODO - meccanismo per trovare i blocchi in una data direzione
 
