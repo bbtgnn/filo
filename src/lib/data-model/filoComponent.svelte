@@ -6,10 +6,8 @@
 	import LinkComponent from './linkComponent.svelte';
 	import { Filo, setFilo } from './filo.svelte.js';
 	import { shortcut, type ShortcutEventDetail, type ShortcutTrigger } from '@svelte-put/shortcut';
-	import type { Dimension, Point, Sign } from './types';
-	import { Link } from './link.svelte';
-	import type { RBushArea } from './solver';
-	import { config } from '$lib/config';
+	import type { Direction } from './types';
+	import { Record } from 'effect';
 
 	type Props = {
 		filo?: Filo;
@@ -22,101 +20,60 @@
 
 	type ShortcutCallback = (detail: ShortcutEventDetail) => void;
 
-	const moveBlockOut: ShortcutCallback = (detail) => {
-		if (!filo.blockIn || !filo.blockOut || !filo.currentLink) return;
-		const e = detail.originalEvent;
-		e.preventDefault();
+	//
 
-		const linkData: Record<string, { sign: Sign; dimension: Dimension }> = {
-			ArrowDown: { dimension: 'y', sign: 1 },
-			ArrowUp: { dimension: 'y', sign: -1 },
-			ArrowRight: { dimension: 'x', sign: 1 },
-			ArrowLeft: { dimension: 'x', sign: -1 }
+	const ArrowKeys = ['ArrowUp', 'ArrowLeft', 'ArrowRight', 'ArrowDown'] as const;
+	type ArrowKey = (typeof ArrowKeys)[number];
+
+	const WASDKeys = ['w', 'a', 's', 'd'] as const;
+	type WASDKey = (typeof WASDKeys)[number];
+
+	const Directions = {
+		Up: { dimension: 'y', sign: -1 },
+		Down: { dimension: 'y', sign: 1 },
+		Left: { dimension: 'x', sign: -1 },
+		Right: { dimension: 'x', sign: 1 }
+	} as const satisfies Record<string, Direction>;
+
+	function createMoveBlockOutShortcuts(): ShortcutTrigger[] {
+		const keyToDirection: Record<ArrowKey, Direction> = {
+			ArrowUp: Directions.Up,
+			ArrowDown: Directions.Down,
+			ArrowLeft: Directions.Left,
+			ArrowRight: Directions.Right
 		};
 
-		const { dimension, sign } = linkData[detail.originalEvent.key];
-		const newLink = new Link(filo.blockIn, filo.blockOut, dimension, sign);
+		return Record.toEntries(keyToDirection).map(([key, direction]) => ({
+			key,
+			callback: preventDefault(() => filo.moveBlockOut(direction))
+		}));
+	}
 
-		filo.removeLink(filo.currentLink);
-		filo.addLink(newLink);
-		filo.currentLink = newLink;
-		filo.solver.updateVariables();
-		filo.solver.updateBlock(filo.blockOut);
-		if (filo.blockQueue) filo.solver.updateBlock(filo.blockQueue);
-		filo.redraw();
-	};
-
-	const moveBlockIn: ShortcutCallback = (detail) => {
-		if (!filo.blockIn || !filo.blockOut || !filo.currentLink) return;
-		const e = detail.originalEvent;
-		e.preventDefault();
-
-		console.log(filo.solver.tree);
-
-		const leftArea: RBushArea = {
-			minX: filo.blockIn.position.x - config.maxSearchDistance,
-			maxX: filo.blockIn.position.x - 10,
-			minY: filo.blockIn.position.y,
-			maxY: filo.blockIn.position.y + filo.blockIn.size.height // TODO - maybe add tolerance
+	function createMoveBlockInShortcuts(): ShortcutTrigger[] {
+		const keyToDirection: Record<WASDKey, Direction> = {
+			w: Directions.Up,
+			s: Directions.Down,
+			a: Directions.Left,
+			d: Directions.Right
 		};
 
-		// const res = filo.solver.tree.search(leftArea);
-		// console.log(res);
+		return Record.toEntries(keyToDirection).map(([key, direction]) => ({
+			key,
+			callback: preventDefault(() => filo.moveBlockIn(direction))
+		}));
+	}
 
-		// // TODO - meccanismo per trovare i blocchi in una data direzione
-
-		// const positions: Record<string, Point> = {
-		// 	w: { x: 0, y: -1 },
-		// 	s: { x: 0, y: 1 },
-		// 	a: { x: -1, y: 0 },
-		// 	d: { x: 1, y: 0 }
-		// };
-		// const nextPosition = positions[e.key];
-		// const nextBlock = filo.blocks.find(
-		// 	(b) =>
-		// 		b.position.x == filo.blockIn!.position.x + nextPosition.x &&
-		// 		b.position.y == filo.blockIn!.position.y + nextPosition.y
-		// );
-		// if (!nextBlock) return;
-
-		// filo.removeLink(filo.currentLink);
-		// filo.blockIn = nextBlock;
-		// const { sign, dimension } = filo.currentLink;
-		// filo.currentLink = new Link(filo.blockIn, filo.blockOut, dimension, sign);
-		// filo.addLink(filo.currentLink);
-		// filo.solver.updateVariables();
-		// filo.redraw();
-	};
-
-	const confirmBlockOut: ShortcutCallback = (detail) => {
-		if (!filo.blockIn || !filo.blockOut || !filo.currentLink) return;
-		const e = detail.originalEvent;
-		e.preventDefault();
-
-		filo.solver.addBlock(filo.blockOut);
-
-		if (!filo.blockQueue) {
-			filo.blockIn = undefined;
-			filo.blockOut = undefined;
-			filo.currentLink = undefined;
-			return;
-		} else {
-			filo.blockIn = filo.blockOut;
-			filo.blockOut = filo.blockQueue;
-			filo.blockQueue = undefined;
-			filo.currentLink = filo.linkQueue;
-			filo.linkQueue = undefined;
-			filo.solver.updateVariables();
-		}
-	};
+	function preventDefault(callback: ShortcutCallback): ShortcutCallback {
+		return (detail) => {
+			detail.originalEvent.preventDefault();
+			callback(detail);
+		};
+	}
 
 	const commands: ShortcutTrigger[] = [
-		...['ArrowUp', 'ArrowLeft', 'ArrowRight', 'ArrowDown'].map((key) => ({
-			key,
-			callback: moveBlockOut
-		})),
-		...['w', 'a', 's', 'd'].map((key) => ({ key, callback: moveBlockIn })),
-		{ key: ' ', callback: confirmBlockOut }
+		...createMoveBlockOutShortcuts(),
+		...createMoveBlockInShortcuts(),
+		{ key: ' ', callback: preventDefault(() => filo.confirmBlockOut()) }
 	];
 </script>
 

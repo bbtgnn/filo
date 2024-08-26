@@ -7,6 +7,8 @@ import { config } from '$lib/config.js';
 import { Link } from './link.svelte';
 import type { Filo } from './filo.svelte';
 
+//
+
 export type BlockState = 'idle' | 'in' | 'out' | 'queue';
 
 //

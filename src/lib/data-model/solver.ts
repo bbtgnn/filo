@@ -69,14 +69,9 @@ export class Solver extends kiwi.Solver {
 	}
 }
 
-export type RBushArea = {
-	minX: number;
-	minY: number;
-	maxX: number;
-	maxY: number;
-};
+//
 
-type RBushBlock = RBushArea & {
+type RBushBlock = RBush.BBox & {
 	id: string;
 };
 
