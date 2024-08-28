@@ -7,18 +7,20 @@ import RBush from 'rbush';
 //
 
 export class Solver extends kiwi.Solver {
-	tree = new RBush<RBushBlock>();
+	tree = new RBush<Block>();
 
 	/* Block */
 
 	addBlock(block: Block) {
-		this.tree.insert(blockToRBush(block));
+		if (!this.isBlockInTree(block)) this.tree.insert(block);
 	}
 
 	removeBlock(block: Block) {
-		this.tree.remove(blockToRBush(block), (a, b) => {
-			return a.id === b.id;
-		});
+		this.tree.remove(block);
+	}
+
+	isBlockInTree(block: Block) {
+		return this.tree.all().includes(block);
 	}
 
 	updateBlock(block: Block) {
@@ -59,6 +61,10 @@ export class Solver extends kiwi.Solver {
 		}
 	}
 
+	removeConstraintSafe(constraint: kiwi.Constraint) {
+		if (this.hasConstraint(constraint)) this.removeConstraint(constraint);
+	}
+
 	suggestVariableValue(
 		variable: kiwi.Variable,
 		value: number,
@@ -69,18 +75,6 @@ export class Solver extends kiwi.Solver {
 	}
 }
 
-//
-
-type RBushBlock = RBush.BBox & {
-	id: string;
-};
-
-function blockToRBush(block: Block): RBushBlock {
-	return {
-		minX: block.position.x,
-		maxX: block.position.x + block.size.width,
-		minY: block.position.y,
-		maxY: block.position.y + block.size.height,
-		id: block.id.toString()
-	};
+export function euclideanDistance(p1: Point, p2: Point) {
+	return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
 }

@@ -6,8 +6,8 @@ import { Solver } from './solver';
 import { uuidv7 } from 'surrealdb.js';
 import * as kiwi from '@lume/kiwi';
 import type { Direction } from './types';
-import { config } from '$lib/config';
-import type RBush from 'rbush';
+import { pipe, Array as A } from 'effect';
+import { log } from '$lib/utils';
 
 //
 
@@ -37,9 +37,9 @@ export class Filo {
 	/* Crun */
 
 	addBlock(block: Block) {
-		if (this.blocks.length === 0) this.setBlockOrigin(block);
 		this.blocks.push(block);
 		this.solver.addBlock(block);
+		if (this.blocks.length == 1) this.setBlockOrigin(block);
 	}
 
 	removeBlock(block: Block) {
@@ -61,11 +61,7 @@ export class Filo {
 
 	setBlockOrigin(block: Block) {
 		this.blockOrigin = block;
-		this.blockOriginConstraints.forEach((c) => {
-			if (this.solver.hasConstraint(c)) {
-				this.solver.removeConstraint(c);
-			}
-		});
+		this.blockOriginConstraints.forEach((c) => this.solver.removeConstraintSafe(c));
 		this.blockOriginConstraints = [
 			new kiwi.Constraint(block.variables.x, kiwi.Operator.Eq, 0, kiwi.Strength.strong),
 			new kiwi.Constraint(block.variables.y, kiwi.Operator.Eq, 0, kiwi.Strength.strong)
@@ -82,7 +78,6 @@ export class Filo {
 		this.blockIn = splitResult.in;
 		this.blockOut = splitResult.out;
 		this.blockQueue = splitResult.queue;
-		if (oldBlock == this.blockOrigin) this.setBlockOrigin(this.blockIn);
 
 		await tick(); // Loads blocks and their height, needed for computing variables
 
@@ -97,7 +92,11 @@ export class Filo {
 		this.solver.updateVariables();
 		this.redraw();
 
-		console.log(this.solver.tree.data.children);
+		this.solver.updateBlock(this.blockIn);
+		this.solver.updateBlock(this.blockOut);
+		if (this.blockQueue) this.solver.updateBlock(this.blockQueue);
+
+		// console.log(this.solver.tree.data.children);
 	};
 
 	replaceBlock(oldBlock: Block, newBlock: Block) {
@@ -117,8 +116,9 @@ export class Filo {
 		this.removeBlock(oldBlock);
 		this.addBlock(newBlock);
 		this.solver.updateVariables();
+		if (oldBlock == this.blockOrigin) this.setBlockOrigin(newBlock);
+
 		this.solver.updateBlock(newBlock);
-		console.log(this.solver.tree);
 	}
 
 	moveBlockOut({ dimension, sign }: Direction) {
@@ -129,12 +129,10 @@ export class Filo {
 		this.addLink(this.currentLink);
 
 		this.solver.updateVariables();
-		this.solver.updateBlock(this.blockOut);
-		if (this.blockQueue) this.solver.updateBlock(this.blockQueue);
-
 		this.redraw();
 
-		console.log(this.solver.tree.data.children);
+		this.solver.updateBlock(this.blockOut);
+		if (this.blockQueue) this.solver.updateBlock(this.blockQueue);
 	}
 
 	confirmBlockOut() {
@@ -155,63 +153,24 @@ export class Filo {
 
 	moveBlockIn(direction: Direction) {
 		if (!this.blockIn || !this.currentLink || !this.blockOut) return;
-		const viewCone = this.getBlockViewCone(this.blockIn, direction);
-		console.log(viewCone);
+		const viewCone = this.blockIn.getViewCone(direction);
+		const nextBlock = pipe(
+			this.solver.tree.search(viewCone),
+			log,
+			A.filter((b) => b.status == 'idle'),
+			(foundBlocks) => this.blockIn?.getClosestBlock(foundBlocks)
+		);
 
-		// (viewCone) => this.solver.tree.search(viewCone),
-		// (nextRBushBlocks) => {
-		// 	if (direction.sign == 1) return nextRBushBlocks.at(0);
-		// 	if (direction.sign == -1) return nextRBushBlocks.at(-1);
-		// },
-		// Option.fromNullable,
-		// Option.flatMap((nextRBushBlock) =>
-		// 	pipe(
-		// 		this.blocks.find((b) => b.id.toString() == nextRBushBlock.id),
-		// 		Option.fromNullable
-		// 	)
-		// ),
-		// Option.getOrThrow
+		if (!nextBlock) return;
 
-		// this.blockIn = nextBlock;
-		// this.removeLink(this.currentLink);
-		// const { sign, dimension } = this.currentLink;
-		// this.currentLink = new Link(this.blockIn, this.blockOut, dimension, sign);
-		// this.addLink(this.currentLink);
+		this.blockIn = nextBlock;
+		this.removeLink(this.currentLink);
+		const { sign, dimension } = this.currentLink;
+		this.currentLink = new Link(this.blockIn, this.blockOut, dimension, sign);
+		this.addLink(this.currentLink);
 
-		// this.solver.updateVariables();
-		// this.redraw();
-	}
-
-	getBlockViewCone(block: Block, { dimension, sign }: Direction): RBush.BBox {
-		let minX: number;
-		let maxX: number;
-		let minY: number;
-		let maxY: number;
-
-		const correction = 10;
-
-		if (dimension == 'x') {
-			minY = block.position.y;
-			maxY = block.position.y + block.size.height;
-			const halfWidth = block.size.width / 2;
-			const centerX = block.position.x + halfWidth;
-			minX = centerX + sign * (halfWidth + correction);
-			maxX = minX + sign * config.maxSearchDistance;
-		} else {
-			minX = block.position.x;
-			maxX = block.position.x + block.size.width;
-			const halfHeight = block.size.height / 2;
-			const centerY = block.position.y + halfHeight;
-			minY = centerY + sign * (halfHeight + correction);
-			maxY = minY + sign * config.maxSearchDistance;
-		}
-
-		return {
-			minX,
-			maxX,
-			minY,
-			maxY
-		};
+		this.solver.updateVariables();
+		this.redraw();
 	}
 
 	/* Ui */

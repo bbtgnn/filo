@@ -1,11 +1,13 @@
 import { RecordId } from 'surrealdb.js';
 import * as kiwi from '@lume/kiwi';
 import { String, Tuple } from 'effect';
-import type { Dimension, Point, Rectangle, Size } from '$lib/data-model/types';
+import type { Dimension, Direction, Point, Rectangle, Size } from '$lib/data-model/types';
 import Maybe, { just, nothing } from 'true-myth/maybe';
 import { config } from '$lib/config.js';
 import { Link } from './link.svelte';
 import type { Filo } from './filo.svelte';
+import RBush from 'rbush';
+import { euclideanDistance } from './solver';
 
 //
 
@@ -13,7 +15,7 @@ export type BlockState = 'idle' | 'in' | 'out' | 'queue';
 
 //
 
-export class Block {
+export class Block implements RBush.BBox {
 	text: string;
 	variables: Record<Dimension | Size, kiwi.Variable> = {
 		x: new kiwi.Variable(),
@@ -36,6 +38,27 @@ export class Block {
 	});
 
 	isOrigin = $derived.by(() => this.filo.blockOrigin == this);
+
+	// RBush.BBox implementation
+
+	get minX() {
+		return this.variables.x.value();
+	}
+	get minY() {
+		return this.variables.y.value();
+	}
+	get maxX() {
+		return this.minX + this.width;
+	}
+	get maxY() {
+		return this.minY + this.height;
+	}
+	get center(): Point {
+		return {
+			x: (this.maxX - this.minX) / 2,
+			y: (this.maxY - this.minY) / 2
+		};
+	}
 
 	//
 
@@ -144,6 +167,50 @@ export class Block {
 
 	scrollIntoView() {
 		this.element?.scrollIntoView({ block: 'center', inline: 'center' });
+	}
+
+	getViewCone({ dimension, sign }: Direction): RBush.BBox {
+		let minX: number;
+		let maxX: number;
+		let minY: number;
+		let maxY: number;
+
+		const correction = 10;
+
+		if (dimension == 'x') {
+			minY = this.position.y;
+			maxY = this.position.y + this.size.height;
+			if (sign == 1) {
+				minX = this.position.x + this.width + correction;
+				maxX = minX + config.maxSearchDistance;
+			} else {
+				minX = this.position.x - correction - config.maxSearchDistance;
+				maxX = minX + config.maxSearchDistance;
+			}
+		} else {
+			minX = this.position.x;
+			maxX = this.position.x + this.size.width;
+			if (sign == 1) {
+				minY = this.position.y + correction;
+				maxY = minY + config.maxSearchDistance;
+			} else {
+				minY = this.position.y - correction - config.maxSearchDistance;
+				maxY = minY + config.maxSearchDistance;
+			}
+		}
+
+		return {
+			minX,
+			maxX,
+			minY,
+			maxY
+		};
+	}
+
+	getClosestBlock(blocks: Block[]): Block {
+		return blocks
+			.map((b) => [b, euclideanDistance(this.center, b.center)] as const)
+			.sort((a, b) => a[1] - b[1])[0][0];
 	}
 }
 
