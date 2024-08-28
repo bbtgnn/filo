@@ -55,8 +55,8 @@ export class Block implements RBush.BBox {
 	}
 	get center(): Point {
 		return {
-			x: (this.maxX - this.minX) / 2,
-			y: (this.maxY - this.minY) / 2
+			x: (this.maxX + this.minX) / 2,
+			y: (this.maxY + this.minY) / 2
 		};
 	}
 
