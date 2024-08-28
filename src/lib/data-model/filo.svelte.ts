@@ -5,7 +5,9 @@ import type { OnSplit } from '$lib/components/blockContent.svelte';
 import { Solver } from './solver';
 import { uuidv7 } from 'surrealdb.js';
 import * as kiwi from '@lume/kiwi';
-// import { DirectedGraph } from 'graphology';
+import type { Direction } from './types';
+import { pipe, Array as A } from 'effect';
+import { log } from '$lib/utils';
 
 //
 
@@ -35,9 +37,9 @@ export class Filo {
 	/* Crun */
 
 	addBlock(block: Block) {
-		if (this.blocks.length === 0) this.setBlockOrigin(block);
 		this.blocks.push(block);
 		this.solver.addBlock(block);
+		if (this.blocks.length == 1) this.setBlockOrigin(block);
 	}
 
 	removeBlock(block: Block) {
@@ -59,17 +61,14 @@ export class Filo {
 
 	setBlockOrigin(block: Block) {
 		this.blockOrigin = block;
-		this.blockOriginConstraints.forEach((c) => {
-			if (this.solver.hasConstraint(c)) {
-				this.solver.removeConstraint(c);
-			}
-		});
+		this.blockOriginConstraints.forEach((c) => this.solver.removeConstraintSafe(c));
 		this.blockOriginConstraints = [
 			new kiwi.Constraint(block.variables.x, kiwi.Operator.Eq, 0, kiwi.Strength.strong),
 			new kiwi.Constraint(block.variables.y, kiwi.Operator.Eq, 0, kiwi.Strength.strong)
 		];
 		this.blockOriginConstraints.forEach((c) => this.solver.addConstraint(c));
 		this.solver.updateVariables();
+		this.solver.updateBlock(block);
 	}
 
 	handleBlockSplit: OnSplit = async (splitResult: BlockSplitResult, oldBlock: Block) => {
@@ -79,23 +78,25 @@ export class Filo {
 		this.blockIn = splitResult.in;
 		this.blockOut = splitResult.out;
 		this.blockQueue = splitResult.queue;
-		if (oldBlock == this.blockOrigin) this.setBlockOrigin(this.blockIn);
 
 		await tick(); // Loads blocks and their height, needed for computing variables
-		this.solver.updateVariables();
 
-		const link = new Link(this.blockIn, this.blockOut, 'y', 1);
-		this.addLink(link);
-		this.currentLink = link;
+		this.currentLink = new Link(this.blockIn, this.blockOut, 'y', 1); // TODO - Maybe add a setter / getter
+		this.addLink(this.currentLink);
 
 		if (this.blockQueue) {
-			const link = new Link(this.blockOut, this.blockQueue, 'y', 1);
-			this.addLink(link);
-			this.linkQueue = link;
+			this.linkQueue = new Link(this.blockOut, this.blockQueue, 'y', 1);
+			this.addLink(this.linkQueue);
 		}
 
 		this.solver.updateVariables();
 		this.redraw();
+
+		this.solver.updateBlock(this.blockIn);
+		this.solver.updateBlock(this.blockOut);
+		if (this.blockQueue) this.solver.updateBlock(this.blockQueue);
+
+		// console.log(this.solver.tree.data.children);
 	};
 
 	replaceBlock(oldBlock: Block, newBlock: Block) {
@@ -114,6 +115,62 @@ export class Filo {
 
 		this.removeBlock(oldBlock);
 		this.addBlock(newBlock);
+		this.solver.updateVariables();
+		if (oldBlock == this.blockOrigin) this.setBlockOrigin(newBlock);
+
+		this.solver.updateBlock(newBlock);
+	}
+
+	moveBlockOut({ dimension, sign }: Direction) {
+		if (!this.blockIn || !this.blockOut || !this.currentLink) return;
+
+		this.removeLink(this.currentLink);
+		this.currentLink = new Link(this.blockIn, this.blockOut, dimension, sign);
+		this.addLink(this.currentLink);
+
+		this.solver.updateVariables();
+		this.redraw();
+
+		this.solver.updateBlock(this.blockOut);
+		if (this.blockQueue) this.solver.updateBlock(this.blockQueue);
+	}
+
+	confirmBlockOut() {
+		if (!this.blockIn || !this.blockOut || !this.currentLink) return;
+
+		if (!this.blockQueue) {
+			this.blockIn = undefined;
+			this.blockOut = undefined;
+			this.currentLink = undefined;
+		} else {
+			this.blockIn = this.blockOut;
+			this.blockOut = this.blockQueue;
+			this.blockQueue = undefined;
+			this.currentLink = this.linkQueue;
+			this.linkQueue = undefined;
+		}
+	}
+
+	moveBlockIn(direction: Direction) {
+		if (!this.blockIn || !this.currentLink || !this.blockOut) return;
+		const viewCone = this.blockIn.getViewCone(direction);
+		const nextBlock = pipe(
+			this.solver.tree.search(viewCone),
+			log,
+			A.filter((b) => b.status == 'idle'),
+			(foundBlocks) => this.blockIn?.getClosestBlock(foundBlocks)
+		);
+
+		if (!nextBlock) return;
+
+		this.blockIn = nextBlock;
+		this.removeLink(this.currentLink);
+		const { sign, dimension } = this.currentLink;
+		this.currentLink = new Link(this.blockIn, this.blockOut, dimension, sign);
+		this.addLink(this.currentLink);
+
+		this.solver.updateVariables();
+		this.redraw();
 	}
 
 	/* Ui */
