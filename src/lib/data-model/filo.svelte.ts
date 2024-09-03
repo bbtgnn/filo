@@ -152,6 +152,7 @@ export class Filo {
 
 	moveBlockIn(direction: Direction) {
 		if (!this.blockIn || !this.currentLink || !this.blockOut) return;
+
 		const viewCone = this.blockIn.getViewCone(direction);
 		const nextBlock = pipe(
 			this.solver.tree.search(viewCone),

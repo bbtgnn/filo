@@ -101,6 +101,7 @@ export class Block implements RBush.BBox {
 	updateSize(size: Rectangle = { width: this.width, height: this.height }) {
 		this.filo.solver.suggestBlockSize(this, size);
 		this.filo.solver.updateVariables();
+		this.filo.solver.updateBlock(this);
 	}
 
 	// TODO - cleanup
