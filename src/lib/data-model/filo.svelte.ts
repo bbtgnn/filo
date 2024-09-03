@@ -7,7 +7,6 @@ import { uuidv7 } from 'surrealdb.js';
 import * as kiwi from '@lume/kiwi';
 import type { Direction } from './types';
 import { pipe, Array as A } from 'effect';
-import { log } from '$lib/utils';
 
 //
 
@@ -156,7 +155,6 @@ export class Filo {
 		const viewCone = this.blockIn.getViewCone(direction);
 		const nextBlock = pipe(
 			this.solver.tree.search(viewCone),
-			log,
 			A.filter((b) => b.status == 'idle'),
 			(foundBlocks) => this.blockIn?.getClosestBlock(foundBlocks)
 		);

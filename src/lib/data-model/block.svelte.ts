@@ -207,10 +207,11 @@ export class Block implements RBush.BBox {
 		};
 	}
 
-	getClosestBlock(blocks: Block[]): Block {
+	getClosestBlock(blocks: Block[]): Block | undefined {
 		return blocks
-			.map((b) => [b, euclideanDistance(this.center, b.center)] as const)
-			.sort((a, b) => a[1] - b[1])[0][0];
+			.map((block) => ({ block, distance: euclideanDistance(this.center, block.center) }))
+			.sort((a, b) => a.distance - b.distance)
+			.at(0)?.block;
 	}
 }
 

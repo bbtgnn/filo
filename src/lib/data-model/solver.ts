@@ -28,18 +28,6 @@ export class Solver extends kiwi.Solver {
 		this.addBlock(block);
 	}
 
-	/* Link */
-
-	addLink(link: Link) {
-		this.addConstraint(link.constraints.main);
-		this.addConstraint(link.constraints.secondary);
-	}
-
-	removeLink(link: Link) {
-		this.removeConstraint(link.constraints.main);
-		this.removeConstraint(link.constraints.secondary);
-	}
-
 	suggestBlockPosition(block: Block, position: Point, strength: number = kiwi.Strength.weak) {
 		const { x, y } = block.variables;
 		this.suggestVariableValue(x, position.x, strength);
@@ -50,6 +38,18 @@ export class Solver extends kiwi.Solver {
 		const { width, height } = block.variables;
 		this.suggestVariableValue(width, size.width, strength);
 		this.suggestVariableValue(height, size.height, strength);
+	}
+
+	/* Link */
+
+	addLink(link: Link) {
+		this.addConstraint(link.constraints.main);
+		this.addConstraint(link.constraints.secondary);
+	}
+
+	removeLink(link: Link) {
+		this.removeConstraint(link.constraints.main);
+		this.removeConstraint(link.constraints.secondary);
 	}
 
 	/* Variables */
