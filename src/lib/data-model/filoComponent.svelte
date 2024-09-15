@@ -8,13 +8,20 @@
 	import { shortcut, type ShortcutEventDetail, type ShortcutTrigger } from '@svelte-put/shortcut';
 	import type { Direction } from './types';
 	import { Record } from 'effect';
+	import { onMount } from 'svelte';
 
 	type Props = {
-		filo?: Filo;
+		filo: Filo;
 	};
 
-	let { filo = new Filo() }: Props = $props();
+	let { filo }: Props = $props();
 	setFilo(filo);
+
+	onMount(() => {
+		return () => {
+			filo.storage?.close();
+		};
+	});
 
 	//
 

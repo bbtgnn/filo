@@ -3,14 +3,18 @@ import type { Block, BlockSplitResult } from './block.svelte';
 import { Link } from './link.svelte';
 import type { OnSplit } from '$lib/components/blockContent.svelte';
 import { Solver } from './solver';
-import { uuidv7 } from 'surrealdb.js';
 import * as kiwi from '@lume/kiwi';
 import type { Direction } from './types';
 import { pipe, Array as A } from 'effect';
+import { Storage } from './storage';
+import { RecordId } from 'surrealdb';
+import { nanoid } from 'nanoid';
 
 //
 
 export class Filo {
+	id: string;
+
 	blocks = $state<Block[]>([]);
 	links = $state<Link[]>([]);
 
@@ -23,27 +27,56 @@ export class Filo {
 	blockOrigin = $state<Block | undefined>(undefined);
 	blockOriginConstraints = $state<kiwi.Constraint[]>([]);
 
+	storage: Storage;
 	solver: Solver;
 
-	redrawKey = $state('');
+	redrawKey = $state(0);
 
 	//
 
-	constructor() {
+	constructor(storage: Storage, id = nanoid(7)) {
 		this.solver = new Solver();
+		this.storage = storage;
+		this.id = id;
 	}
 
-	/* Crun */
+	/* DB */
+
+	static get dbName() {
+		return 'filo' as const;
+	}
+
+	get recordId(): RecordId {
+		return new RecordId(Filo.dbName, this.id);
+	}
+
+	serialize(): SerializedAppState {
+		return {
+			blockIn: this.blockIn?.recordId.toString(),
+			blockOut: this.blockOut?.recordId.toString(),
+			blockOrigin: this.blockOrigin?.recordId.toString(),
+			blockQueue: this.blockQueue?.recordId.toString(),
+			currentLink: this.currentLink?.recordId.toString(),
+			linkQueue: this.currentLink?.recordId.toString()
+		};
+	}
+
+	/* CRUD */
 
 	addBlock(block: Block) {
 		this.blocks.push(block);
 		this.solver.addBlock(block);
+		this.storage.saveBlock(block);
 		if (this.blocks.length == 1) this.setBlockOrigin(block);
 	}
 
 	removeBlock(block: Block) {
 		this.blocks.splice(this.blocks.indexOf(block), 1);
 		this.solver.removeBlock(block);
+	}
+
+	updateBlock(block: Block) {
+		this.storage.updateBlock(block);
 	}
 
 	addLink(link: Link) {
@@ -175,7 +208,7 @@ export class Filo {
 	/* Ui */
 
 	redraw() {
-		this.redrawKey = uuidv7();
+		this.redrawKey = Math.random();
 	}
 }
 
@@ -183,8 +216,8 @@ export class Filo {
 
 const FILO_CONTEXT_KEY = Symbol('AppState');
 
-export function initFilo() {
-	return setFilo(new Filo());
+export function initFilo(storage: Storage) {
+	return setFilo(new Filo(storage));
 }
 
 export function setFilo(filo: Filo) {
@@ -194,3 +227,14 @@ export function setFilo(filo: Filo) {
 export function getFilo() {
 	return getContext<ReturnType<typeof initFilo>>(FILO_CONTEXT_KEY);
 }
+
+//
+
+export type SerializedAppState = {
+	blockIn: string | undefined;
+	blockOut: string | undefined;
+	blockQueue: string | undefined;
+	currentLink: string | undefined;
+	linkQueue: string | undefined;
+	blockOrigin: string | undefined;
+};

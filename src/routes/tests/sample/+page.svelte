@@ -4,7 +4,12 @@
 	import FiloComponent from '$lib/data-model/filoComponent.svelte';
 	import textSample from './text-sample.txt?raw';
 
-	const filo = new Filo();
+	import { Storage } from '$lib/data-model/storage';
+
+	export let data;
+
+	const storage = new Storage(data.db);
+	const filo = new Filo(storage);
 	const block = new Block(filo, '0', textSample);
 	filo.addBlock(block);
 </script>
