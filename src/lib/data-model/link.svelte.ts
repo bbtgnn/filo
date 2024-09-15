@@ -1,4 +1,4 @@
-import { RecordId } from 'surrealdb.js';
+import { RecordId } from 'surrealdb';
 import * as kiwi from '@lume/kiwi';
 import { type Dimension } from '$lib/data-model/types';
 import { config } from '$lib/config.js';
@@ -13,7 +13,7 @@ export type Sign = -1 | 1;
 //
 
 export class Link {
-	id: RecordId;
+	id: string;
 	in: Block;
 	out: Block;
 	dimension: Dimension;
@@ -23,18 +23,35 @@ export class Link {
 		secondary: kiwi.Constraint;
 	};
 
-	static get dbName() {
-		return 'link' as const;
-	}
-
 	constructor(blockIn: Block, blockOut: Block, dimension: Dimension, sign: Sign) {
 		this.in = blockIn;
 		this.out = blockOut;
 		this.dimension = dimension;
 		this.sign = sign;
 		this.constraints = this.getConstraints();
-		this.id = new RecordId(Link.dbName, nanoid(5));
+		this.id = nanoid(5);
 	}
+
+	/* DB */
+
+	static get dbName() {
+		return 'link' as const;
+	}
+
+	get recordId(): RecordId {
+		return new RecordId(Link.dbName, this.id);
+	}
+
+	serialize(): SerializedLink {
+		return {
+			in: this.in.recordId.toString(),
+			out: this.out.recordId.toString(),
+			sign: this.sign,
+			dimension: this.dimension
+		};
+	}
+
+	/* Business logic */
 
 	getConstraints() {
 		const perpendicularDimension = getPerpendicularDimension(this.dimension);
@@ -60,3 +77,10 @@ export class Link {
 		};
 	}
 }
+
+export type SerializedLink = {
+	in: string;
+	out: string;
+	dimension: Dimension;
+	sign: Sign;
+};

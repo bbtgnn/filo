@@ -36,6 +36,7 @@
 	"type": "module",
 	"dependencies": {
 		"@lume/kiwi": "^0.4.3",
+		"@surrealdb/wasm": "1.0.0-beta.16",
 		"@svelte-put/shortcut": "^3.1.1",
 		"@sveltejs/adapter-static": "^3.0.4",
 		"@types/rbush": "^3.0.4",
@@ -43,8 +44,7 @@
 		"graphology": "^0.25.4",
 		"nanoid": "^5.0.7",
 		"rbush": "^4.0.1",
-		"surrealdb.js": "1.0.0-beta.9",
-		"surrealdb.wasm": "1.0.0-beta.15",
+		"surrealdb": "1.0.0-beta.21",
 		"true-myth": "^8.0.0"
 	}
 }

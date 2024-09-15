@@ -1,21 +1,21 @@
-DEFINE TABLE IF NOT EXISTS block SCHEMAFULL;
+-- DEFINE TABLE IF NOT EXISTS block SCHEMAFULL;
 
-DEFINE FIELD text ON TABLE block TYPE string;
+-- DEFINE FIELD text ON TABLE block TYPE string;
 
 ---
 
-DEFINE TABLE IF NOT EXISTS dimension SCHEMAFULL;
+-- DEFINE TABLE IF NOT EXISTS dimension SCHEMAFULL;
 
-DEFINE FIELD vector ON TABLE dimension TYPE string;
+-- DEFINE FIELD vector ON TABLE dimension TYPE string;
 
 --
 
 -- DEFINE TABLE IF NOT EXISTS link SCHEMAFULL; -- seems like it's not needed
 
-DEFINE FIELD in ON TABLE link TYPE record<block>;
-DEFINE FIELD out ON TABLE link TYPE record<block>;
-DEFINE FIELD dimension ON TABLE link TYPE record<dimension>;
-DEFINE FIELD sign ON TABLE link TYPE number; -- has to be -1 or 1
+-- DEFINE FIELD in ON TABLE link TYPE record<block>;
+-- DEFINE FIELD out ON TABLE link TYPE record<block>;
+-- DEFINE FIELD dimension ON TABLE link TYPE record<dimension>;
+-- DEFINE FIELD sign ON TABLE link TYPE number; -- has to be -1 or 1
 
 --
 
