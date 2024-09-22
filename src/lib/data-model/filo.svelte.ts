@@ -7,7 +7,6 @@ import * as kiwi from '@lume/kiwi';
 import type { Direction } from './types';
 import { pipe, Array as A } from 'effect';
 import { Storage } from './storage';
-import { RecordId } from 'surrealdb';
 import { nanoid } from 'nanoid';
 
 //
@@ -15,20 +14,24 @@ import { nanoid } from 'nanoid';
 export class Filo {
 	id: string;
 
+	storage: Storage;
+	solver: Solver;
+
 	blocks = $state<Block[]>([]);
 	links = $state<Link[]>([]);
+
+	//
+
+	origin = $state<{ block: Block | undefined; constraints: kiwi.Constraint[] }>({
+		block: undefined,
+		constraints: []
+	});
 
 	blockIn = $state<Block | undefined>(undefined);
 	blockOut = $state<Block | undefined>(undefined);
 	blockQueue = $state<Block | undefined>(undefined);
 	currentLink = $state<Link | undefined>(undefined);
 	linkQueue = $state<Link | undefined>(undefined);
-
-	blockOrigin = $state<Block | undefined>(undefined);
-	blockOriginConstraints = $state<kiwi.Constraint[]>([]);
-
-	storage: Storage;
-	solver: Solver;
 
 	redrawKey = $state(0);
 
@@ -38,27 +41,6 @@ export class Filo {
 		this.solver = new Solver();
 		this.storage = storage;
 		this.id = id;
-	}
-
-	/* DB */
-
-	static get dbName() {
-		return 'filo' as const;
-	}
-
-	get recordId(): RecordId {
-		return new RecordId(Filo.dbName, this.id);
-	}
-
-	serialize(): SerializedAppState {
-		return {
-			blockIn: this.blockIn?.recordId.toString(),
-			blockOut: this.blockOut?.recordId.toString(),
-			blockOrigin: this.blockOrigin?.recordId.toString(),
-			blockQueue: this.blockQueue?.recordId.toString(),
-			currentLink: this.currentLink?.recordId.toString(),
-			linkQueue: this.currentLink?.recordId.toString()
-		};
 	}
 
 	/* CRUD */
@@ -73,10 +55,12 @@ export class Filo {
 	removeBlock(block: Block) {
 		this.blocks.splice(this.blocks.indexOf(block), 1);
 		this.solver.removeBlock(block);
+		if (this.blocks.length == 0) this.origin.block = undefined;
 	}
 
 	updateBlock(block: Block) {
 		this.storage.updateBlock(block);
+		this.solver.updateBlock(block);
 	}
 
 	addLink(link: Link) {
@@ -92,13 +76,13 @@ export class Filo {
 	/* Block operations */
 
 	setBlockOrigin(block: Block) {
-		this.blockOrigin = block;
-		this.blockOriginConstraints.forEach((c) => this.solver.removeConstraintSafe(c));
-		this.blockOriginConstraints = [
+		this.origin.block = block;
+		this.origin.constraints.forEach((c) => this.solver.removeConstraintSafe(c));
+		this.origin.constraints = [
 			new kiwi.Constraint(block.variables.x, kiwi.Operator.Eq, 0, kiwi.Strength.strong),
 			new kiwi.Constraint(block.variables.y, kiwi.Operator.Eq, 0, kiwi.Strength.strong)
 		];
-		this.blockOriginConstraints.forEach((c) => this.solver.addConstraint(c));
+		this.origin.constraints.forEach((c) => this.solver.addConstraint(c));
 		this.solver.updateVariables();
 		this.solver.updateBlock(block);
 	}
@@ -148,7 +132,7 @@ export class Filo {
 		this.removeBlock(oldBlock);
 		this.addBlock(newBlock);
 		this.solver.updateVariables();
-		if (oldBlock == this.blockOrigin) this.setBlockOrigin(newBlock);
+		if (oldBlock == this.origin.block) this.setBlockOrigin(newBlock);
 
 		this.solver.updateBlock(newBlock);
 	}
@@ -214,6 +198,17 @@ export class Filo {
 
 //
 
+export type SerializedAppState = {
+	blockIn: string | undefined;
+	blockOut: string | undefined;
+	blockQueue: string | undefined;
+	currentLink: string | undefined;
+	linkQueue: string | undefined;
+	blockOrigin: string | undefined;
+};
+
+//
+
 const FILO_CONTEXT_KEY = Symbol('AppState');
 
 export function initFilo(storage: Storage) {
@@ -227,14 +222,3 @@ export function setFilo(filo: Filo) {
 export function getFilo() {
 	return getContext<ReturnType<typeof initFilo>>(FILO_CONTEXT_KEY);
 }
-
-//
-
-export type SerializedAppState = {
-	blockIn: string | undefined;
-	blockOut: string | undefined;
-	blockQueue: string | undefined;
-	currentLink: string | undefined;
-	linkQueue: string | undefined;
-	blockOrigin: string | undefined;
-};

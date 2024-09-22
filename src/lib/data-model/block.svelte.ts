@@ -34,7 +34,7 @@ export class Block implements RBush.BBox {
 		else return 'idle';
 	});
 
-	isOrigin = $derived.by(() => this.filo.blockOrigin == this);
+	isOrigin = $derived.by(() => this.filo.origin.block == this);
 
 	/* */
 
