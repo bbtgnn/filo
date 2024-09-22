@@ -20,10 +20,10 @@ export class Filo {
 	solver: Solver;
 	view: View;
 
+	//
+
 	blocks = $state<Block[]>([]);
 	links = $state<Link[]>([]);
-
-	//
 
 	origin = $state<{ block: Block | undefined; constraints: kiwi.Constraint[] }>({
 		block: undefined,
@@ -33,6 +33,7 @@ export class Filo {
 	blockIn = $state<Block | undefined>(undefined);
 	blockOut = $state<Block | undefined>(undefined);
 	blockQueue = $state<Block | undefined>(undefined);
+
 	currentLink = $state<Link | undefined>(undefined);
 	linkQueue = $state<Link | undefined>(undefined);
 
@@ -78,12 +79,14 @@ export class Filo {
 	/* Block operations */
 
 	setBlockOrigin(block: Block) {
-		this.origin.block = block;
 		this.origin.constraints.forEach((c) => this.solver.removeConstraintSafe(c));
-		this.origin.constraints = [
-			new kiwi.Constraint(block.variables.x, kiwi.Operator.Eq, 0, kiwi.Strength.strong),
-			new kiwi.Constraint(block.variables.y, kiwi.Operator.Eq, 0, kiwi.Strength.strong)
-		];
+		this.origin = {
+			block,
+			constraints: [
+				new kiwi.Constraint(block.variables.x, kiwi.Operator.Eq, 0, kiwi.Strength.strong),
+				new kiwi.Constraint(block.variables.y, kiwi.Operator.Eq, 0, kiwi.Strength.strong)
+			]
+		};
 		this.origin.constraints.forEach((c) => this.solver.addConstraint(c));
 		this.solver.updateVariables();
 		this.solver.updateBlock(block);
@@ -190,8 +193,6 @@ export class Filo {
 		this.solver.updateVariables();
 		this.view.redraw();
 	}
-
-	/* Ui */
 }
 
 //
