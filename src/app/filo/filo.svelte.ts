@@ -199,15 +199,6 @@ export class Filo {
 
 //
 
-export type SerializedAppState = {
-	blockIn: string | undefined;
-	blockOut: string | undefined;
-	blockQueue: string | undefined;
-	currentLink: string | undefined;
-	linkQueue: string | undefined;
-	blockOrigin: string | undefined;
-};
-
 export type BlockState = 'idle' | 'in' | 'out' | 'queue';
 
 //
