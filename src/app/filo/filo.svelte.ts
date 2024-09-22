@@ -41,7 +41,7 @@ export class Filo {
 
 	/* CRUD */
 
-	async addBlock(block: Block) {
+	addBlock(block: Block) {
 		this.blocks.push(block);
 		this.constraintsSolver.addBlock(block);
 		this.spaceSolver.addBlock(block);

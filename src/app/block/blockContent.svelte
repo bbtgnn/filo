@@ -6,7 +6,7 @@
 <script lang="ts">
 	import type { Action } from 'svelte/action';
 	import { config } from '@/config';
-	import { onMount, untrack } from 'svelte';
+	import { untrack } from 'svelte';
 	import { getFilo } from '@/filo/filo.svelte';
 
 	//
