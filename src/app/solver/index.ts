@@ -1,7 +1,7 @@
 import * as kiwi from '@lume/kiwi';
-import type { Link } from './link.svelte';
-import type { Block } from './block.svelte';
-import type { Point, Rectangle } from './types';
+import type { Link } from '@/link/link.svelte';
+import type { Block } from '@/block/block.svelte';
+import type { Point, Rectangle } from '@/types';
 import RBush from 'rbush';
 
 //

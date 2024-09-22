@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { Block } from '$lib/data-model/block.svelte';
-	import { Filo } from '$lib/data-model/filo.svelte';
-	import FiloComponent from '$lib/data-model/filoComponent.svelte';
+	import { Block } from '@/block/block.svelte';
+	import { Filo } from '@/filo/filo.svelte';
+	import FiloComponent from '@/filo/filoComponent.svelte';
 	import textSample from './text-sample.txt?raw';
 
-	import { Storage } from '$lib/data-model/storage';
+	import { Storage } from '@/storage';
 
 	export let data;
 

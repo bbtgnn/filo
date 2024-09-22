@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { config } from '$lib/config';
-
-	import { Block } from '$lib/data-model/block.svelte';
 	import type { Snippet } from 'svelte';
+
+	import { config } from '@/config';
+	import { Block } from './block.svelte';
 
 	//
 

@@ -1,12 +1,12 @@
 import * as kiwi from '@lume/kiwi';
 import { Record, String, Tuple } from 'effect';
-import type { Dimension, Direction, Point, Rectangle, Size } from '$lib/data-model/types';
+import type { Dimension, Direction, Point, Rectangle, Size } from '@/types';
 import Maybe, { just, nothing } from 'true-myth/maybe';
-import { config } from '$lib/config.js';
-import { Link } from './link.svelte';
-import type { Filo } from './filo.svelte';
+import { config } from '@/config';
+import { Link } from '@/link/link.svelte';
+import type { Filo } from '@/filo/filo.svelte';
 import RBush from 'rbush';
-import { euclideanDistance } from './solver';
+import { euclideanDistance } from '@/solver';
 import { RecordId } from 'surrealdb';
 
 //

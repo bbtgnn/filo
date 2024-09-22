@@ -1,13 +1,15 @@
-import { getContext, setContext, tick } from 'svelte';
-import type { Block, BlockSplitResult } from './block.svelte';
-import { Link } from './link.svelte';
-import type { OnSplit } from '$lib/components/blockContent.svelte';
-import { Solver } from './solver';
+import { getContext, setContext } from 'svelte';
+import { Block } from '@/block/block.svelte';
+import { type BlockSplitResult } from '@/block/block.svelte';
+import { Link } from '@/link/link.svelte';
+import type { OnSplit } from '@/block/blockContent.svelte';
+import { Solver } from '@/solver';
 import * as kiwi from '@lume/kiwi';
-import type { Direction } from './types';
+import type { Direction } from '@/types';
 import { pipe, Array as A } from 'effect';
-import { Storage } from './storage';
+import { Storage } from '@/storage';
 import { nanoid } from 'nanoid';
+import { View } from '@/view/view.svelte';
 
 //
 
@@ -16,6 +18,7 @@ export class Filo {
 
 	storage: Storage;
 	solver: Solver;
+	view: View;
 
 	blocks = $state<Block[]>([]);
 	links = $state<Link[]>([]);
@@ -33,12 +36,11 @@ export class Filo {
 	currentLink = $state<Link | undefined>(undefined);
 	linkQueue = $state<Link | undefined>(undefined);
 
-	redrawKey = $state(0);
-
 	//
 
 	constructor(storage: Storage, id = nanoid(7)) {
 		this.solver = new Solver();
+		this.view = new View();
 		this.storage = storage;
 		this.id = id;
 	}
@@ -95,7 +97,7 @@ export class Filo {
 		this.blockOut = splitResult.out;
 		this.blockQueue = splitResult.queue;
 
-		await tick(); // Loads blocks and their height, needed for computing variables
+		await this.view.waitForUpdate(); // Loads blocks and their height, needed for computing variables
 
 		this.currentLink = new Link(this.blockIn, this.blockOut, 'y', 1); // TODO - Maybe add a setter / getter
 		this.addLink(this.currentLink);
@@ -106,7 +108,7 @@ export class Filo {
 		}
 
 		this.solver.updateVariables();
-		this.redraw();
+		this.view.redraw();
 
 		this.solver.updateBlock(this.blockIn);
 		this.solver.updateBlock(this.blockOut);
@@ -145,7 +147,7 @@ export class Filo {
 		this.addLink(this.currentLink);
 
 		this.solver.updateVariables();
-		this.redraw();
+		this.view.redraw();
 
 		this.solver.updateBlock(this.blockOut);
 		if (this.blockQueue) this.solver.updateBlock(this.blockQueue);
@@ -186,14 +188,10 @@ export class Filo {
 		this.addLink(this.currentLink);
 
 		this.solver.updateVariables();
-		this.redraw();
+		this.view.redraw();
 	}
 
 	/* Ui */
-
-	redraw() {
-		this.redrawKey = Math.random();
-	}
 }
 
 //

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Block } from '$lib/data-model/block.svelte';
+	import type { Block } from './block.svelte';
 	import type { Snippet } from 'svelte';
 
 	type Props = {

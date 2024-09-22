@@ -25,6 +25,10 @@ const config = {
 				: process.env.REPO_NAME
 					? `/${process.env.REPO_NAME}`
 					: ''
+		},
+
+		alias: {
+			'@': './src/app'
 		}
 	}
 };

@@ -1,12 +1,12 @@
 <script lang="ts">
-	import Viewport from '$lib/components/viewport.svelte';
-	import BlockCanvas from '$lib/components/blockCanvas.svelte';
-	import BlockComponent from './blockComponent.svelte';
-	import LinkCanvas from '$lib/components/linkCanvas.svelte';
-	import LinkComponent from './linkComponent.svelte';
-	import { Filo, setFilo } from './filo.svelte.js';
+	import ViewComponent from '@/view/viewComponent.svelte';
+	import BlockCanvas from '@/view/blockCanvas.svelte';
+	import BlockComponent from '@/block/blockComponent.svelte';
+	import LinkCanvas from '@/view/linkCanvas.svelte';
+	import LinkComponent from '@/link/linkComponent.svelte';
+	import { Filo, setFilo } from './filo.svelte';
 	import { shortcut, type ShortcutEventDetail, type ShortcutTrigger } from '@svelte-put/shortcut';
-	import type { Direction } from './types';
+	import type { Direction } from '@/types';
 	import { Record } from 'effect';
 	import { onMount } from 'svelte';
 
@@ -86,18 +86,16 @@
 
 <svelte:window use:shortcut={{ trigger: commands }} />
 
-{#key filo.redrawKey}
-	<Viewport>
-		<LinkCanvas>
-			{#each filo.links as link (link.id)}
-				<LinkComponent {link} />
-			{/each}
-		</LinkCanvas>
+<ViewComponent>
+	<LinkCanvas>
+		{#each filo.links as link (link.id)}
+			<LinkComponent {link} />
+		{/each}
+	</LinkCanvas>
 
-		<BlockCanvas>
-			{#each filo.blocks as block (block.id)}
-				<BlockComponent {block} onSplit={filo.handleBlockSplit} />
-			{/each}
-		</BlockCanvas>
-	</Viewport>
-{/key}
+	<BlockCanvas>
+		{#each filo.blocks as block (block.id)}
+			<BlockComponent {block} onSplit={filo.handleBlockSplit} />
+		{/each}
+	</BlockCanvas>
+</ViewComponent>

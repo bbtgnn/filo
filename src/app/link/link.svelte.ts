@@ -1,9 +1,9 @@
 import { RecordId } from 'surrealdb';
 import * as kiwi from '@lume/kiwi';
-import { type Dimension } from '$lib/data-model/types';
-import { config } from '$lib/config.js';
-import type { Block } from './block.svelte';
-import { dimensionToSize, getPerpendicularDimension } from '$lib/utils';
+import { type Dimension } from '@/types';
+import { config } from '@/config';
+import type { Block } from '@/block/block.svelte';
+import { dimensionToSize, getPerpendicularDimension } from '@/utils';
 import { nanoid } from 'nanoid';
 
 //

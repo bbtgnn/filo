@@ -1,6 +1,6 @@
 import type Surreal from 'surrealdb';
-import { Block, type SerializedBlock } from './block.svelte';
-import type { Link, SerializedLink } from './link.svelte';
+import { Block, type SerializedBlock } from '@/block/block.svelte';
+import type { Link, SerializedLink } from '@/link/link.svelte';
 
 export class Storage {
 	constructor(public db: Surreal) {}

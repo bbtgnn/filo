@@ -1,5 +1,5 @@
 import { dev } from '$app/environment';
-import { type Dimension, type Size } from '$lib/data-model/types';
+import { type Dimension, type Size } from '@/types';
 
 export function getPerpendicularDimension(dimension: string | Dimension): Dimension {
 	return dimension == 'x' ? 'y' : 'x';

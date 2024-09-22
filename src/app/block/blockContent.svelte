@@ -1,11 +1,11 @@
 <script context="module" lang="ts">
-	import { Block, type BlockSplitResult } from '$lib/data-model/block.svelte';
+	import { Block, type BlockSplitResult } from './block.svelte';
 	export type OnSplit = (splitResult: BlockSplitResult, oldBlock: Block) => void | Promise<void>;
 </script>
 
 <script lang="ts">
 	import type { Action } from 'svelte/action';
-	import { config } from '$lib/config';
+	import { config } from '@/config';
 	import { onMount, untrack } from 'svelte';
 
 	//
