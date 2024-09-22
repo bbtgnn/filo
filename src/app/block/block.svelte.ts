@@ -34,7 +34,7 @@ export class Block implements RBush.BBox {
 		else return 'idle';
 	});
 
-	isOrigin = $derived.by(() => this.filo.origin.block == this);
+	isOrigin = $derived.by(() => this.filo.origin?.block == this);
 
 	/* */
 
@@ -42,9 +42,6 @@ export class Block implements RBush.BBox {
 		this.filo = filo;
 		this.text = text;
 		this.id = id;
-
-		this.filo.solver.addEditVariableSafe(this.variables.width, kiwi.Strength.strong);
-		this.filo.solver.addEditVariableSafe(this.variables.height, kiwi.Strength.strong);
 	}
 
 	/* Geometry */
@@ -108,14 +105,6 @@ export class Block implements RBush.BBox {
 			text: this.text,
 			variables: Record.map(this.variables, (v) => v.value())
 		};
-	}
-
-	//
-
-	updateSize(size: Rectangle = { width: this.width, height: this.height }) {
-		this.filo.solver.suggestBlockSize(this, size);
-		this.filo.solver.updateVariables();
-		this.filo.solver.updateBlock(this);
 	}
 
 	// TODO - cleanup

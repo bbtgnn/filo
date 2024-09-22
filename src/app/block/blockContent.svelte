@@ -7,6 +7,7 @@
 	import type { Action } from 'svelte/action';
 	import { config } from '@/config';
 	import { onMount, untrack } from 'svelte';
+	import { getFilo } from '@/filo/filo.svelte';
 
 	//
 
@@ -17,14 +18,19 @@
 
 	let { block, onSplit = () => {} }: Props = $props();
 
+	const filo = getFilo();
+
 	// TODO - Test
 	$effect(() => {
 		if (block.element) {
-			untrack(() => block).updateSize({
-				// TODO - check if block is not tracked, but block.element yes
-				width: block.element.clientWidth,
-				height: block.element.clientHeight
-			});
+			filo.updateBlockSize(
+				untrack(() => block),
+				{
+					// TODO - check if block is not tracked, but block.element yes
+					width: block.element.clientWidth,
+					height: block.element.clientHeight
+				}
+			);
 		}
 	});
 

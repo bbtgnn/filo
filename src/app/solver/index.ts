@@ -6,38 +6,24 @@ import RBush from 'rbush';
 
 //
 
-export class Solver extends kiwi.Solver {
-	tree = new RBush<Block>();
-
+export class ConstraintSolver extends kiwi.Solver {
 	/* Block */
 
 	addBlock(block: Block) {
-		if (!this.isBlockInTree(block)) this.tree.insert(block);
+		this.addEditVariable(block.variables.width, kiwi.Strength.strong);
+		this.addEditVariable(block.variables.height, kiwi.Strength.strong);
 	}
 
 	removeBlock(block: Block) {
-		this.tree.remove(block);
+		this.removeEditVariable(block.variables.width);
+		this.removeEditVariable(block.variables.height);
 	}
 
-	isBlockInTree(block: Block) {
-		return this.tree.all().includes(block);
-	}
-
-	updateBlock(block: Block) {
-		this.removeBlock(block);
-		this.addBlock(block);
-	}
-
-	suggestBlockPosition(block: Block, position: Point, strength: number = kiwi.Strength.weak) {
-		const { x, y } = block.variables;
-		this.suggestVariableValue(x, position.x, strength);
-		this.suggestVariableValue(y, position.y, strength);
-	}
-
-	suggestBlockSize(block: Block, size: Rectangle, strength: number = kiwi.Strength.weak) {
+	updateBlockSize(block: Block, size: Rectangle) {
 		const { width, height } = block.variables;
-		this.suggestVariableValue(width, size.width, strength);
-		this.suggestVariableValue(height, size.height, strength);
+		this.suggestValue(width, size.width);
+		this.suggestValue(height, size.height);
+		this.updateVariables();
 	}
 
 	/* Link */
@@ -51,26 +37,24 @@ export class Solver extends kiwi.Solver {
 		this.removeConstraint(link.constraints.main);
 		this.removeConstraint(link.constraints.secondary);
 	}
+}
 
-	/* Variables */
-
-	addEditVariableSafe(variable: kiwi.Variable, strength: number = kiwi.Strength.weak) {
-		if (!this.hasEditVariable(variable)) {
-			this.addEditVariable(variable, strength);
-		}
+export class SpaceSolver extends RBush<Block> {
+	addBlock(block: Block) {
+		if (!this.isBlockInTree(block)) this.insert(block);
 	}
 
-	removeConstraintSafe(constraint: kiwi.Constraint) {
-		if (this.hasConstraint(constraint)) this.removeConstraint(constraint);
+	removeBlock(block: Block) {
+		if (this.isBlockInTree(block)) this.remove(block);
 	}
 
-	suggestVariableValue(
-		variable: kiwi.Variable,
-		value: number,
-		strength: number = kiwi.Strength.weak
-	) {
-		this.addEditVariableSafe(variable, strength);
-		this.suggestValue(variable, value);
+	updateBlock(block: Block) {
+		this.removeBlock(block);
+		this.addBlock(block);
+	}
+
+	isBlockInTree(block: Block) {
+		return this.all().includes(block);
 	}
 }
 
