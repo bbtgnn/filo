@@ -6,11 +6,11 @@
 
 	import { Storage } from '@/storage';
 
-	export let data;
+	// export let data;
 
-	const storage = new Storage(data.db);
-	const filo = new Filo(storage);
-	const block = new Block(filo, '0', textSample);
+	// const storage = new Storage(data.db);
+	const filo = new Filo();
+	const block = new Block('0', textSample);
 	filo.addBlock(block);
 </script>
 

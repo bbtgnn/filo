@@ -71,7 +71,7 @@
 		{JSON.stringify(block.position)}
 	</span>
 
-	{#if block.isOrigin}
+	{#if filo.origin?.block == block}
 		<span
 			style="position: absolute; right: 0; top: 0; padding: 5px; background-color: blue; color: white;"
 		>

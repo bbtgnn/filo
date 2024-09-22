@@ -173,7 +173,7 @@ export class Filo {
 		const viewCone = this.blockIn.getViewCone(direction);
 		const nextBlock = pipe(
 			this.spaceSolver.search(viewCone),
-			A.filter((b) => b.status == 'idle'),
+			A.filter((b) => this.getBlockState(b) == 'idle'),
 			(foundBlocks) => this.blockIn?.getClosestBlock(foundBlocks)
 		);
 
@@ -188,6 +188,13 @@ export class Filo {
 		this.constraintsSolver.updateVariables();
 		this.view.redraw();
 	}
+
+	getBlockState(block: Block): BlockState {
+		if (this.blockIn == block) return 'in';
+		else if (this.blockOut == block) return 'out';
+		else if (this.blockQueue == block) return 'queue';
+		else return 'idle';
+	}
 }
 
 //
@@ -200,6 +207,8 @@ export type SerializedAppState = {
 	linkQueue: string | undefined;
 	blockOrigin: string | undefined;
 };
+
+export type BlockState = 'idle' | 'in' | 'out' | 'queue';
 
 //
 

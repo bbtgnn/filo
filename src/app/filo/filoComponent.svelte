@@ -17,12 +17,6 @@
 	let { filo }: Props = $props();
 	setFilo(filo);
 
-	onMount(() => {
-		return () => {
-			filo.storage?.close();
-		};
-	});
-
 	//
 
 	type ShortcutCallback = (detail: ShortcutEventDetail) => void;
