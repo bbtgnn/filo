@@ -1,106 +1,93 @@
-import { getContext, setContext, tick } from 'svelte';
-import type { Block, BlockSplitResult } from './block.svelte';
-import { Link } from './link.svelte';
-import type { OnSplit } from '$lib/components/blockContent.svelte';
-import { Solver } from './solver';
+import { getContext, setContext } from 'svelte';
+import { Block } from '@/block/block.svelte';
+import { type BlockSplitResult } from '@/block/block.svelte';
+import { Link } from '@/link/link.svelte';
+import type { OnSplit } from '@/block/blockContent.svelte';
+import { ConstraintSolver, SpaceSolver } from '@/solver';
 import * as kiwi from '@lume/kiwi';
-import type { Direction } from './types';
+import type { Direction, Rectangle } from '@/types';
 import { pipe, Array as A } from 'effect';
-import { Storage } from './storage';
-import { RecordId } from 'surrealdb';
 import { nanoid } from 'nanoid';
+import { View } from '@/view/view.svelte';
 
 //
 
 export class Filo {
 	id: string;
 
+	view = new View();
+	constraintsSolver = new ConstraintSolver();
+	spaceSolver = new SpaceSolver();
+
+	//
+
 	blocks = $state<Block[]>([]);
 	links = $state<Link[]>([]);
+
+	origin = $state<{ block: Block; constraints: kiwi.Constraint[] } | undefined>(undefined);
 
 	blockIn = $state<Block | undefined>(undefined);
 	blockOut = $state<Block | undefined>(undefined);
 	blockQueue = $state<Block | undefined>(undefined);
+
 	currentLink = $state<Link | undefined>(undefined);
 	linkQueue = $state<Link | undefined>(undefined);
 
-	blockOrigin = $state<Block | undefined>(undefined);
-	blockOriginConstraints = $state<kiwi.Constraint[]>([]);
-
-	storage: Storage;
-	solver: Solver;
-
-	redrawKey = $state(0);
-
 	//
 
-	constructor(storage: Storage, id = nanoid(7)) {
-		this.solver = new Solver();
-		this.storage = storage;
+	constructor(id = nanoid(7)) {
 		this.id = id;
-	}
-
-	/* DB */
-
-	static get dbName() {
-		return 'filo' as const;
-	}
-
-	get recordId(): RecordId {
-		return new RecordId(Filo.dbName, this.id);
-	}
-
-	serialize(): SerializedAppState {
-		return {
-			blockIn: this.blockIn?.recordId.toString(),
-			blockOut: this.blockOut?.recordId.toString(),
-			blockOrigin: this.blockOrigin?.recordId.toString(),
-			blockQueue: this.blockQueue?.recordId.toString(),
-			currentLink: this.currentLink?.recordId.toString(),
-			linkQueue: this.currentLink?.recordId.toString()
-		};
 	}
 
 	/* CRUD */
 
 	addBlock(block: Block) {
 		this.blocks.push(block);
-		this.solver.addBlock(block);
-		this.storage.saveBlock(block);
+		this.constraintsSolver.addBlock(block);
+		this.spaceSolver.addBlock(block);
 		if (this.blocks.length == 1) this.setBlockOrigin(block);
 	}
 
 	removeBlock(block: Block) {
 		this.blocks.splice(this.blocks.indexOf(block), 1);
-		this.solver.removeBlock(block);
+		this.constraintsSolver.removeBlock(block);
+		this.spaceSolver.removeBlock(block);
+		if (this.blocks.length == 0) this.removeBlockOrigin();
 	}
 
-	updateBlock(block: Block) {
-		this.storage.updateBlock(block);
+	updateBlockSize(block: Block, size: Rectangle) {
+		this.constraintsSolver.updateBlockSize(block, size);
 	}
 
 	addLink(link: Link) {
 		this.links.push(link);
-		this.solver.addLink(link);
+		this.constraintsSolver.addLink(link);
 	}
 
 	removeLink(link: Link) {
 		this.links.splice(this.links.indexOf(link), 1);
-		this.solver.removeLink(link);
+		this.constraintsSolver.removeLink(link);
 	}
 
 	/* Block operations */
 
 	setBlockOrigin(block: Block) {
-		this.blockOrigin = block;
-		this.blockOriginConstraints.forEach((c) => this.solver.removeConstraintSafe(c));
-		this.blockOriginConstraints = [
-			new kiwi.Constraint(block.variables.x, kiwi.Operator.Eq, 0, kiwi.Strength.strong),
-			new kiwi.Constraint(block.variables.y, kiwi.Operator.Eq, 0, kiwi.Strength.strong)
-		];
-		this.blockOriginConstraints.forEach((c) => this.solver.addConstraint(c));
-		this.solver.updateVariables();
-		this.solver.updateBlock(block);
+		this.origin?.constraints.forEach((c) => this.constraintsSolver.removeConstraint(c));
+		this.origin = {
+			block,
+			constraints: [
+				new kiwi.Constraint(block.variables.x, kiwi.Operator.Eq, 0, kiwi.Strength.strong),
+				new kiwi.Constraint(block.variables.y, kiwi.Operator.Eq, 0, kiwi.Strength.strong)
+			]
+		};
+		this.origin.constraints.forEach((c) => this.constraintsSolver.addConstraint(c));
+		this.constraintsSolver.updateVariables();
+		this.blocks.forEach((b) => this.spaceSolver.updateBlock(b));
+	}
+
+	removeBlockOrigin() {
+		this.origin?.constraints.forEach((c) => this.constraintsSolver.removeConstraint(c));
+		this.origin = undefined;
 	}
 
 	handleBlockSplit: OnSplit = async (splitResult: BlockSplitResult, oldBlock: Block) => {
@@ -111,7 +98,7 @@ export class Filo {
 		this.blockOut = splitResult.out;
 		this.blockQueue = splitResult.queue;
 
-		await tick(); // Loads blocks and their height, needed for computing variables
+		await this.view.waitForUpdate(); // Loads blocks and their height, needed for computing variables
 
 		this.currentLink = new Link(this.blockIn, this.blockOut, 'y', 1); // TODO - Maybe add a setter / getter
 		this.addLink(this.currentLink);
@@ -121,19 +108,16 @@ export class Filo {
 			this.addLink(this.linkQueue);
 		}
 
-		this.solver.updateVariables();
-		this.redraw();
+		this.constraintsSolver.updateVariables();
+		this.view.redraw();
 
-		this.solver.updateBlock(this.blockIn);
-		this.solver.updateBlock(this.blockOut);
-		if (this.blockQueue) this.solver.updateBlock(this.blockQueue);
-
-		// console.log(this.solver.tree.data.children);
+		this.spaceSolver.updateBlock(this.blockIn);
+		this.spaceSolver.updateBlock(this.blockOut);
+		if (this.blockQueue) this.spaceSolver.updateBlock(this.blockQueue);
 	};
 
 	replaceBlock(oldBlock: Block, newBlock: Block) {
 		const linksToRemove = this.links.filter((link) => link.in == oldBlock || link.out == oldBlock);
-
 		const newLinks = linksToRemove.map((oldLink) => {
 			if (oldLink.in == oldBlock) {
 				return new Link(newBlock, oldLink.out, oldLink.dimension, oldLink.sign);
@@ -147,10 +131,10 @@ export class Filo {
 
 		this.removeBlock(oldBlock);
 		this.addBlock(newBlock);
-		this.solver.updateVariables();
-		if (oldBlock == this.blockOrigin) this.setBlockOrigin(newBlock);
+		this.constraintsSolver.updateVariables();
+		if (oldBlock == this.origin?.block) this.setBlockOrigin(newBlock);
 
-		this.solver.updateBlock(newBlock);
+		this.spaceSolver.updateBlock(newBlock);
 	}
 
 	moveBlockOut({ dimension, sign }: Direction) {
@@ -160,11 +144,11 @@ export class Filo {
 		this.currentLink = new Link(this.blockIn, this.blockOut, dimension, sign);
 		this.addLink(this.currentLink);
 
-		this.solver.updateVariables();
-		this.redraw();
+		this.constraintsSolver.updateVariables();
+		this.view.redraw();
 
-		this.solver.updateBlock(this.blockOut);
-		if (this.blockQueue) this.solver.updateBlock(this.blockQueue);
+		this.spaceSolver.updateBlock(this.blockOut);
+		if (this.blockQueue) this.spaceSolver.updateBlock(this.blockQueue);
 	}
 
 	confirmBlockOut() {
@@ -188,8 +172,8 @@ export class Filo {
 
 		const viewCone = this.blockIn.getViewCone(direction);
 		const nextBlock = pipe(
-			this.solver.tree.search(viewCone),
-			A.filter((b) => b.status == 'idle'),
+			this.spaceSolver.search(viewCone),
+			A.filter((b) => this.getBlockState(b) == 'idle'),
 			(foundBlocks) => this.blockIn?.getClosestBlock(foundBlocks)
 		);
 
@@ -201,23 +185,28 @@ export class Filo {
 		this.currentLink = new Link(this.blockIn, this.blockOut, dimension, sign);
 		this.addLink(this.currentLink);
 
-		this.solver.updateVariables();
-		this.redraw();
+		this.constraintsSolver.updateVariables();
+		this.view.redraw();
 	}
 
-	/* Ui */
-
-	redraw() {
-		this.redrawKey = Math.random();
+	getBlockState(block: Block): BlockState {
+		if (this.blockIn == block) return 'in';
+		else if (this.blockOut == block) return 'out';
+		else if (this.blockQueue == block) return 'queue';
+		else return 'idle';
 	}
 }
 
 //
 
+export type BlockState = 'idle' | 'in' | 'out' | 'queue';
+
+//
+
 const FILO_CONTEXT_KEY = Symbol('AppState');
 
-export function initFilo(storage: Storage) {
-	return setFilo(new Filo(storage));
+export function initFilo() {
+	return setFilo(new Filo());
 }
 
 export function setFilo(filo: Filo) {
@@ -227,14 +216,3 @@ export function setFilo(filo: Filo) {
 export function getFilo() {
 	return getContext<ReturnType<typeof initFilo>>(FILO_CONTEXT_KEY);
 }
-
-//
-
-export type SerializedAppState = {
-	blockIn: string | undefined;
-	blockOut: string | undefined;
-	blockQueue: string | undefined;
-	currentLink: string | undefined;
-	linkQueue: string | undefined;
-	blockOrigin: string | undefined;
-};

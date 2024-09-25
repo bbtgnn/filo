@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getFilo } from '$lib/data-model/filo.svelte';
+	import { getFilo } from '@/filo/filo.svelte';
 	import { untrack, type Snippet } from 'svelte';
 
 	type Props = {
@@ -16,7 +16,9 @@
 <div
 	style="width: 100vw; height: 90vh; overflow: scroll; position: relative; background-color: gainsboro;"
 >
-	{#if children}
-		{@render children()}
-	{/if}
+	{#key filo.view.redrawKey}
+		{#if children}
+			{@render children()}
+		{/if}
+	{/key}
 </div>

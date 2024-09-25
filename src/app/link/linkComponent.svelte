@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { config } from '$lib/config';
-	import type { Link } from '$lib/data-model/link.svelte';
+	import { config } from '@/config';
+	import type { Link } from './link.svelte';
 
 	type Props = {
 		link: Link;

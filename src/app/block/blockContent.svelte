@@ -1,12 +1,13 @@
 <script context="module" lang="ts">
-	import { Block, type BlockSplitResult } from '$lib/data-model/block.svelte';
+	import { Block, type BlockSplitResult } from './block.svelte';
 	export type OnSplit = (splitResult: BlockSplitResult, oldBlock: Block) => void | Promise<void>;
 </script>
 
 <script lang="ts">
 	import type { Action } from 'svelte/action';
-	import { config } from '$lib/config';
-	import { onMount, untrack } from 'svelte';
+	import { config } from '@/config';
+	import { untrack } from 'svelte';
+	import { getFilo } from '@/filo/filo.svelte';
 
 	//
 
@@ -17,14 +18,19 @@
 
 	let { block, onSplit = () => {} }: Props = $props();
 
+	const filo = getFilo();
+
 	// TODO - Test
 	$effect(() => {
 		if (block.element) {
-			untrack(() => block).updateSize({
-				// TODO - check if block is not tracked, but block.element yes
-				width: block.element.clientWidth,
-				height: block.element.clientHeight
-			});
+			filo.updateBlockSize(
+				untrack(() => block),
+				{
+					// TODO - check if block is not tracked, but block.element yes
+					width: block.element.clientWidth,
+					height: block.element.clientHeight
+				}
+			);
 		}
 	});
 
@@ -65,7 +71,7 @@
 		{JSON.stringify(block.position)}
 	</span>
 
-	{#if block.isOrigin}
+	{#if filo.origin?.block == block}
 		<span
 			style="position: absolute; right: 0; top: 0; padding: 5px; background-color: blue; color: white;"
 		>

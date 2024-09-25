@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { config } from '$lib/config';
+	import { config } from '@/config';
 	import type { Snippet } from 'svelte';
 
 	//

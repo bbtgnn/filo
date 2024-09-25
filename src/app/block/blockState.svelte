@@ -1,5 +1,6 @@
 <script lang="ts">
-	import type { Block } from '$lib/data-model/block.svelte';
+	import { getFilo } from '@/filo/filo.svelte';
+	import type { Block } from './block.svelte';
 	import type { Snippet } from 'svelte';
 
 	type Props = {
@@ -8,13 +9,16 @@
 	};
 
 	let { block, children }: Props = $props();
+
+	const filo = getFilo();
+	const state = $derived(filo.getBlockState(block));
 </script>
 
 <div
-	class:state-anchor={block.status == 'in'}
-	class:state-idle={block.status == 'idle'}
-	class:state-positioning={block.status == 'out'}
-	class:state-queue={block.status == 'queue'}
+	class:state-anchor={state == 'in'}
+	class:state-idle={state == 'idle'}
+	class:state-positioning={state == 'out'}
+	class:state-queue={state == 'queue'}
 >
 	{@render children()}
 </div>

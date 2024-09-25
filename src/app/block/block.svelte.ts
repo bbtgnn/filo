@@ -1,19 +1,16 @@
 import * as kiwi from '@lume/kiwi';
 import { Record, String, Tuple } from 'effect';
-import type { Dimension, Direction, Point, Rectangle, Size } from '$lib/data-model/types';
+import type { Dimension, Direction, Point, Rectangle, Size } from '@/types';
 import Maybe, { just, nothing } from 'true-myth/maybe';
-import { config } from '$lib/config.js';
-import { Link } from './link.svelte';
-import type { Filo } from './filo.svelte';
+import { config } from '@/config';
+import { Link } from '@/link/link.svelte';
 import RBush from 'rbush';
-import { euclideanDistance } from './solver';
+import { euclideanDistance } from '@/solver';
 import { RecordId } from 'surrealdb';
 
 //
 
 export class Block implements RBush.BBox {
-	filo: Filo;
-
 	id: string;
 	text: string;
 	variables: Record<Dimension | Size, kiwi.Variable> = {
@@ -27,24 +24,11 @@ export class Block implements RBush.BBox {
 	height = $derived.by(() => this.element?.clientHeight ?? config.block.baseHeight);
 	width = $derived.by(() => this.element?.clientWidth ?? config.block.baseWidth);
 
-	status = $derived.by<BlockState>(() => {
-		if (this == this.filo.blockQueue) return 'queue';
-		if (this == this.filo.blockIn) return 'in';
-		if (this == this.filo.blockOut) return 'out';
-		else return 'idle';
-	});
-
-	isOrigin = $derived.by(() => this.filo.blockOrigin == this);
-
 	/* */
 
-	constructor(filo: Filo, id: string, text: string) {
-		this.filo = filo;
+	constructor(id: string, text: string) {
 		this.text = text;
 		this.id = id;
-
-		this.filo.solver.addEditVariableSafe(this.variables.width, kiwi.Strength.strong);
-		this.filo.solver.addEditVariableSafe(this.variables.height, kiwi.Strength.strong);
 	}
 
 	/* Geometry */
@@ -110,14 +94,6 @@ export class Block implements RBush.BBox {
 		};
 	}
 
-	//
-
-	updateSize(size: Rectangle = { width: this.width, height: this.height }) {
-		this.filo.solver.suggestBlockSize(this, size);
-		this.filo.solver.updateVariables();
-		this.filo.solver.updateBlock(this);
-	}
-
 	// TODO - cleanup
 	split(selection: Selection): Maybe<BlockSplitResult> {
 		if (selection.isCollapsed) {
@@ -152,7 +128,7 @@ export class Block implements RBush.BBox {
 					this.text.slice(selectionEnd)
 				]
 					.filter(String.isNonEmpty)
-					.map((text, index) => new Block(this.filo, this.id + index.toString(), text));
+					.map((text, index) => new Block(this.id + index.toString(), text));
 				return just({
 					in: chunks[0],
 					out: chunks[1],
@@ -169,11 +145,10 @@ export class Block implements RBush.BBox {
 		return just(
 			Tuple.make(
 				new Block(
-					this.filo,
 					this.id + '0', // TODO - refine, mabye some method
 					chunks[0]
 				),
-				new Block(this.filo, this.id + '1', chunks[1])
+				new Block(this.id + '1', chunks[1])
 			)
 		);
 	}
@@ -227,8 +202,6 @@ export class Block implements RBush.BBox {
 			.at(0)?.block;
 	}
 }
-
-export type BlockState = 'idle' | 'in' | 'out' | 'queue';
 
 export type BlockSplitResult = { in: Block; out: Block; queue?: Block; link: Link };
 
