@@ -2,7 +2,6 @@ import { getContext, setContext } from 'svelte';
 import { Block } from '@/block/block.svelte';
 import { type BlockSplitResult } from '@/block/block.svelte';
 import { Link } from '@/link/link.svelte';
-import type { OnSplit } from '@/block/blockContent.svelte';
 import { ConstraintSolver, SpaceSolver } from '@/solver';
 import * as kiwi from '@lume/kiwi';
 import type { Direction, Rectangle } from '@/types';
@@ -19,21 +18,11 @@ export class Filo {
 	constraintsSolver = new ConstraintSolver();
 	spaceSolver = new SpaceSolver();
 
-	//
-
 	blocks = $state<Block[]>([]);
 	links = $state<Link[]>([]);
-
 	origin = $state<{ block: Block; constraints: kiwi.Constraint[] } | undefined>(undefined);
 
-	blockIn = $state<Block | undefined>(undefined);
-	blockOut = $state<Block | undefined>(undefined);
-	blockQueue = $state<Block | undefined>(undefined);
-
-	currentLink = $state<Link | undefined>(undefined);
-	linkQueue = $state<Link | undefined>(undefined);
-
-	//
+	/* */
 
 	constructor(id = nanoid(7)) {
 		this.id = id;
@@ -55,10 +44,6 @@ export class Filo {
 		if (this.blocks.length == 0) this.removeBlockOrigin();
 	}
 
-	updateBlockSize(block: Block, size: Rectangle) {
-		this.constraintsSolver.updateBlockSize(block, size);
-	}
-
 	addLink(link: Link) {
 		this.links.push(link);
 		this.constraintsSolver.addLink(link);
@@ -69,7 +54,9 @@ export class Filo {
 		this.constraintsSolver.removeLink(link);
 	}
 
-	/* Block operations */
+	updateBlockSize(block: Block, size: Rectangle) {
+		this.constraintsSolver.updateBlockSize(block, size);
+	}
 
 	setBlockOrigin(block: Block) {
 		this.origin?.constraints.forEach((c) => this.constraintsSolver.removeConstraint(c));
@@ -90,7 +77,31 @@ export class Filo {
 		this.origin = undefined;
 	}
 
-	handleBlockSplit: OnSplit = async (splitResult: BlockSplitResult, oldBlock: Block) => {
+	replaceBlock(oldBlock: Block, newBlock: Block) {
+		const linksToRemove = this.links.filter((link) => link.in == oldBlock || link.out == oldBlock);
+		const newLinks = linksToRemove.map((oldLink) => {
+			if (oldLink.in == oldBlock) {
+				return new Link(newBlock, oldLink.out, oldLink.dimension, oldLink.sign);
+			} else {
+				return new Link(oldLink.in, newBlock, oldLink.dimension, oldLink.sign);
+			}
+		});
+
+		for (const link of linksToRemove) this.removeLink(link);
+		for (const link of newLinks) this.addLink(link);
+
+		this.removeBlock(oldBlock);
+		this.addBlock(newBlock);
+		this.constraintsSolver.updateVariables();
+		if (oldBlock == this.origin?.block) this.setBlockOrigin(newBlock);
+
+		this.spaceSolver.updateBlock(newBlock);
+	}
+
+	/* Block operations */
+
+	@DisableMethod
+	async handleBlockSplit(splitResult: BlockSplitResult, oldBlock: Block) {
 		this.replaceBlock(oldBlock, splitResult.in);
 		this.addBlock(splitResult.out);
 		if (splitResult.queue) this.addBlock(splitResult.queue);
@@ -114,29 +125,9 @@ export class Filo {
 		this.spaceSolver.updateBlock(this.blockIn);
 		this.spaceSolver.updateBlock(this.blockOut);
 		if (this.blockQueue) this.spaceSolver.updateBlock(this.blockQueue);
-	};
-
-	replaceBlock(oldBlock: Block, newBlock: Block) {
-		const linksToRemove = this.links.filter((link) => link.in == oldBlock || link.out == oldBlock);
-		const newLinks = linksToRemove.map((oldLink) => {
-			if (oldLink.in == oldBlock) {
-				return new Link(newBlock, oldLink.out, oldLink.dimension, oldLink.sign);
-			} else {
-				return new Link(oldLink.in, newBlock, oldLink.dimension, oldLink.sign);
-			}
-		});
-
-		for (const link of linksToRemove) this.removeLink(link);
-		for (const link of newLinks) this.addLink(link);
-
-		this.removeBlock(oldBlock);
-		this.addBlock(newBlock);
-		this.constraintsSolver.updateVariables();
-		if (oldBlock == this.origin?.block) this.setBlockOrigin(newBlock);
-
-		this.spaceSolver.updateBlock(newBlock);
 	}
 
+	@DisableMethod
 	moveBlockOut({ dimension, sign }: Direction) {
 		if (!this.blockIn || !this.blockOut || !this.currentLink) return;
 
@@ -151,6 +142,7 @@ export class Filo {
 		if (this.blockQueue) this.spaceSolver.updateBlock(this.blockQueue);
 	}
 
+	@DisableMethod
 	confirmBlockOut() {
 		if (!this.blockIn || !this.blockOut || !this.currentLink) return;
 
@@ -167,6 +159,7 @@ export class Filo {
 		}
 	}
 
+	@DisableMethod
 	moveBlockIn(direction: Direction) {
 		if (!this.blockIn || !this.currentLink || !this.blockOut) return;
 
@@ -190,10 +183,11 @@ export class Filo {
 	}
 
 	getBlockState(block: Block): BlockState {
-		if (this.blockIn == block) return 'in';
-		else if (this.blockOut == block) return 'out';
-		else if (this.blockQueue == block) return 'queue';
-		else return 'idle';
+		return 'idle';
+		// if (this.blockIn == block) return 'in';
+		// else if (this.blockOut == block) return 'out';
+		// else if (this.blockQueue == block) return 'queue';
+		// else return 'idle';
 	}
 }
 
@@ -215,4 +209,10 @@ export function setFilo(filo: Filo) {
 
 export function getFilo() {
 	return getContext<ReturnType<typeof initFilo>>(FILO_CONTEXT_KEY);
+}
+
+function DisableMethod(target: unknown, propertyKey: string, descriptor: PropertyDescriptor) {
+	descriptor.value = function () {
+		console.log(`${propertyKey} is disables`);
+	};
 }
