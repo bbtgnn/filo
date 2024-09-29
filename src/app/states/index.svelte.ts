@@ -1,16 +1,18 @@
 import { browser } from '$app/environment';
-import type { Block } from '@/block/block.svelte';
+import type { Block, BlockSplitResult } from '@/block/block.svelte';
 import type { Filo } from '@/filo/filo.svelte';
-import type { Link } from '@/link/link.svelte';
+import { Link } from '@/link/link.svelte';
+import type { Direction } from '@/types';
 import { Option } from 'effect';
+import { getContext, setContext } from 'svelte';
 
 //
 
-export class FiloStateManager {
-	constructor(
-		public filo: Filo,
-		private history: FiloState[] = [new IdleState(this, {})]
-	) {}
+export class FiloManager {
+	history = $state<FiloState[]>([new IdleState(this, {})]);
+	currentState = $derived(this.history.at(-1));
+
+	constructor(public filo: Filo) {}
 
 	push(state: FiloState) {
 		this.history.push(state);
@@ -21,110 +23,177 @@ export class FiloStateManager {
 		if (Option.isNone(removedState)) this.push(new IdleState(this, {}));
 		return removedState;
 	}
+
+	getBlockState(block: Block): BlockState {
+		if (this.currentState instanceof IdleState) return 'idle';
+		else if (this.currentState instanceof FocusState) {
+			if (this.currentState.context.blocks.focused == block) return 'focus';
+			else return 'idle';
+		} else if (this.currentState instanceof PositioningState) {
+			if (this.currentState.context.blocks.in == block) return 'in';
+			else if (this.currentState.context.blocks.out == block) return 'out';
+			else if (this.currentState.context.blocks.queue == block) return 'queue';
+			else return 'idle';
+		} else return 'idle';
+	}
 }
 
 //
 
-type FiloState = SplittingState | FocusState | IdleState;
+const FILO_MANAGER_CONTEXT_KEY = Symbol('AppState');
+
+export function setFiloManager(manager: FiloManager) {
+	return setContext(FILO_MANAGER_CONTEXT_KEY, manager);
+}
+
+export function getFiloManager() {
+	return getContext<ReturnType<typeof setFiloManager>>(FILO_MANAGER_CONTEXT_KEY);
+}
+
+//
+
+export type BlockState = 'idle' | 'in' | 'out' | 'queue' | 'focus';
+
+//
+
+type FiloState = PositioningState | FocusState | IdleState;
 
 export class IdleState {
 	constructor(
-		public stack: FiloStateManager,
+		public manager: FiloManager,
 		public context = {}
 	) {}
-}
 
-export class SplittingState {
-	constructor(
-		public stack: FiloStateManager,
-		public context: {
-			blocks: {
-				in: Block;
-				out: Block;
-				queue?: Block;
-				old: Block;
-			};
-			links: {
-				active: Link;
-				queue?: Link;
-			};
-		}
-	) {}
-
-	async apply() {
-		const {filo} = this.stack
-		filo.replaceBlock(this.context.blocks.old, this.context.blocks.in);
-		filo.addBlock(this.context.blocks.out);
-		if (this.context.blocks.queue) filo.addBlock(this.context.blocks.queue);
-
-		// await this.filo.view.waitForUpdate(); // Loads blocks and their height, needed for computing variables
-
-		// this.filo.addLink(this.context.links.active);
-
-		// if (this.blockQueue) {
-		// 	this.linkQueue = new Link(this.blockOut, this.blockQueue, 'y', 1);
-		// 	this.addLink(this.linkQueue);
-		// }
-
-		// this.filo.constraintsSolver.updateVariables();
-		// this.filo.view.redraw();
-
-		// this.filo.spaceSolver.updateBlock(this.blockIn);
-		// this.filo.spaceSolver.updateBlock(this.blockOut);
-		// if (this.blockQueue) this.spaceSolver.updateBlock(this.blockQueue);
-
-		// this.currentLink = new Link(this.blockIn, this.blockOut, 'y', 1); // TODO - Maybe add a setter / getter
-		// this.blockIn = splitResult.in;
-		// this.blockOut = splitResult.out;
-		// this.blockQueue = splitResult.queue;
+	focusBlock(block: Block) {
+		this.manager.push(
+			new FocusState(this.manager, {
+				blocks: {
+					focused: block
+				}
+			})
+		);
 	}
-
-	// Add methods
 }
 
 //
 
 export class FocusState {
 	constructor(
-		public filo: Filo,
+		public manager: FiloManager,
 		public context: {
 			blocks: {
 				focused: Block;
 			};
-			// selection: {
-			// 	start: number
-			// 	end?:number
-			// }
 		}
 	) {}
 
-	splitBlock() {
+	async splitBlock() {
 		if (!browser) throw new Error('not_browser');
 		const selection = window.getSelection();
 		if (!selection) return;
 
-		const nextState = this.context.blocks.focused.split(selection).pipe(
-			Option.map(
-				(splitResult) =>
-					new SplittingState(this., {
-						blocks: {
-							in: splitResult.in,
-							out: splitResult.out,
-							queue: splitResult.queue,
-							old: this.context.blocks.focused
-						},
-						links: {
-							active: splitResult.link
-						}
-					})
-			)
-		);
+		const splitResult = this.context.blocks.focused.split(selection);
+		if (Option.isNone(splitResult)) return;
+		const { blocks, links } = splitResult.pipe(Option.getOrThrow);
 
-		nextState.pipe(
-			Option.match({
-				onSome: (newState) => this.filo.states.push(newState),
-				onNone: () => console.error('splitBlock_fail')
-			})
+		const { filo } = this.manager;
+
+		filo.replaceBlock(this.context.blocks.focused, blocks.in);
+		filo.addBlock(blocks.out);
+		if (blocks.queue) filo.addBlock(blocks.queue);
+
+		await filo.view.waitForUpdate(); // Loads blocks and their height, needed for computing variables
+
+		filo.addLink(links.active);
+		if (links.queue) filo.addLink(links.queue);
+
+		filo.constraintsSolver.updateVariables();
+		filo.view.redraw();
+
+		filo.spaceSolver.updateBlock(blocks.in);
+		filo.spaceSolver.updateBlock(blocks.out);
+		if (blocks.queue) filo.spaceSolver.updateBlock(blocks.queue);
+
+		this.manager.push(new PositioningState(this.manager, { blocks, links }));
+	}
+
+	exit() {
+		this.manager.push(new IdleState(this.manager, {}));
+	}
+}
+
+export class PositioningState {
+	constructor(
+		public manager: FiloManager,
+		public context: BlockSplitResult
+	) {}
+
+	moveBlockOut({ dimension, sign }: Direction) {
+		const { filo } = this.manager;
+		const { blocks, links } = this.context;
+
+		filo.removeLink(this.context.links.active);
+
+		const newActiveLink = new Link(blocks.in, blocks.out, dimension, sign);
+		filo.addLink(newActiveLink);
+
+		filo.constraintsSolver.updateVariables();
+		filo.view.redraw();
+
+		filo.spaceSolver.updateBlock(blocks.out);
+		if (blocks.queue) filo.spaceSolver.updateBlock(blocks.queue);
+
+		this.manager.push(
+			new PositioningState(this.manager, { blocks, links: { ...links, active: newActiveLink } })
 		);
 	}
+
+	confirmBlockOut() {
+		const { blocks, links } = this.context;
+		if (blocks.queue && links.queue) {
+			this.manager.push(
+				new PositioningState(this.manager, {
+					blocks: {
+						in: blocks.out,
+						out: blocks.queue
+					},
+					links: {
+						active: links.queue
+					}
+				})
+			);
+		} else {
+			this.manager.push(
+				new FocusState(this.manager, {
+					blocks: {
+						focused: blocks.out
+					}
+				})
+			);
+		}
+	}
+
+	// moveBlockIn(direction: Direction) {
+	// 	if (!this.blockIn || !this.currentLink || !this.blockOut) return;
+
+	// 	const viewCone = this.blockIn.getViewCone(direction);
+	// 	const nextBlock = pipe(
+	// 		this.spaceSolver.search(viewCone),
+	// 		A.filter((b) => this.getBlockState(b) == 'idle'),
+	// 		(foundBlocks) => this.blockIn?.getClosestBlock(foundBlocks)
+	// 	);
+
+	// 	if (!nextBlock) return;
+
+	// 	this.blockIn = nextBlock;
+	// 	this.removeLink(this.currentLink);
+	// 	const { sign, dimension } = this.currentLink;
+	// 	this.currentLink = new Link(this.blockIn, this.blockOut, dimension, sign);
+	// 	this.addLink(this.currentLink);
+
+	// 	this.constraintsSolver.updateVariables();
+	// 	this.view.redraw();
+	// }
+
+	// Add methods
 }

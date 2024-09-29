@@ -102,9 +102,13 @@ export class Block implements RBush.BBox {
 			} else {
 				return this.splitAtIndex(cursorIndex).pipe(
 					Option.map(([firstBlock, secondBlock]) => ({
-						in: firstBlock,
-						out: secondBlock,
-						link: new Link(firstBlock, secondBlock, 'y', 1) // TODO - Get from preferences
+						blocks: {
+							in: firstBlock,
+							out: secondBlock
+						},
+						links: {
+							active: new Link(firstBlock, secondBlock, 'y', 1) // TODO - Get from preferences}
+						}
 					}))
 				);
 			}
@@ -113,17 +117,25 @@ export class Block implements RBush.BBox {
 			if (selectionStart === 0) {
 				return this.splitAtIndex(selectionEnd).pipe(
 					Option.map(([firstBlock, secondBlock]) => ({
-						in: secondBlock,
-						out: firstBlock,
-						link: new Link(secondBlock, firstBlock, 'y', 1) // TODO - Get from preferences
+						blocks: {
+							in: secondBlock,
+							out: firstBlock
+						},
+						links: {
+							active: new Link(secondBlock, firstBlock, 'y', 1) // TODO - Get from preferences
+						}
 					}))
 				);
 			} else if (selectionEnd == this.text.length - 1) {
 				return this.splitAtIndex(selectionStart).pipe(
 					Option.map(([firstBlock, secondBlock]) => ({
-						in: firstBlock,
-						out: secondBlock,
-						link: new Link(firstBlock, secondBlock, 'y', 1) // TODO - Get from preferences
+						blocks: {
+							in: firstBlock,
+							out: secondBlock
+						},
+						links: {
+							active: new Link(firstBlock, secondBlock, 'y', 1) // TODO - Get from preferences
+						}
 					}))
 				);
 			} else {
@@ -134,11 +146,21 @@ export class Block implements RBush.BBox {
 				]
 					.filter(String.isNonEmpty)
 					.map((text, index) => new Block(this.id + index.toString(), text));
+
+				const blockIn = chunks[0];
+				const blockOut = chunks[1];
+				const blockQueue: Block | undefined = chunks[2];
+
 				return Option.some({
-					in: chunks[0],
-					out: chunks[1],
-					link: new Link(chunks[0], chunks[1], 'y', 1), // TODO - Get from preferences
-					queue: chunks[2]
+					blocks: {
+						in: blockIn,
+						out: blockOut,
+						queue: blockQueue
+					},
+					links: {
+						active: new Link(blockIn, blockOut, 'y', 1), // TODO - Get from preferences
+						queue: blockQueue ? new Link(blockOut, blockQueue, 'y', 1) : undefined
+					}
 				});
 			}
 		}
@@ -208,7 +230,10 @@ export class Block implements RBush.BBox {
 	}
 }
 
-export type BlockSplitResult = { in: Block; out: Block; queue?: Block; link: Link };
+export type BlockSplitResult = {
+	blocks: { in: Block; out: Block; queue?: Block };
+	links: { active: Link; queue?: Link };
+};
 
 export type SerializedBlock = {
 	text: string;

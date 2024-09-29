@@ -1,11 +1,8 @@
-import { getContext, setContext } from 'svelte';
 import { Block } from '@/block/block.svelte';
-import { type BlockSplitResult } from '@/block/block.svelte';
 import { Link } from '@/link/link.svelte';
 import { ConstraintSolver, SpaceSolver } from '@/solver';
 import * as kiwi from '@lume/kiwi';
-import type { Direction, Rectangle } from '@/types';
-import { pipe, Array as A } from 'effect';
+import type { Rectangle } from '@/types';
 import { nanoid } from 'nanoid';
 import { View } from '@/view/view.svelte';
 
@@ -22,13 +19,13 @@ export class Filo {
 	links = $state<Link[]>([]);
 	origin = $state<{ block: Block; constraints: kiwi.Constraint[] } | undefined>(undefined);
 
-	/* */
+	//
 
 	constructor(id = nanoid(7)) {
 		this.id = id;
 	}
 
-	/* CRUD */
+	//
 
 	addBlock(block: Block) {
 		this.blocks.push(block);
@@ -58,25 +55,6 @@ export class Filo {
 		this.constraintsSolver.updateBlockSize(block, size);
 	}
 
-	setBlockOrigin(block: Block) {
-		this.origin?.constraints.forEach((c) => this.constraintsSolver.removeConstraint(c));
-		this.origin = {
-			block,
-			constraints: [
-				new kiwi.Constraint(block.variables.x, kiwi.Operator.Eq, 0, kiwi.Strength.strong),
-				new kiwi.Constraint(block.variables.y, kiwi.Operator.Eq, 0, kiwi.Strength.strong)
-			]
-		};
-		this.origin.constraints.forEach((c) => this.constraintsSolver.addConstraint(c));
-		this.constraintsSolver.updateVariables();
-		this.blocks.forEach((b) => this.spaceSolver.updateBlock(b));
-	}
-
-	removeBlockOrigin() {
-		this.origin?.constraints.forEach((c) => this.constraintsSolver.removeConstraint(c));
-		this.origin = undefined;
-	}
-
 	replaceBlock(oldBlock: Block, newBlock: Block) {
 		const linksToRemove = this.links.filter((link) => link.in == oldBlock || link.out == oldBlock);
 		const newLinks = linksToRemove.map((oldLink) => {
@@ -98,121 +76,22 @@ export class Filo {
 		this.spaceSolver.updateBlock(newBlock);
 	}
 
-	/* Block operations */
-
-	@DisableMethod
-	async handleBlockSplit(splitResult: BlockSplitResult, oldBlock: Block) {
-		this.replaceBlock(oldBlock, splitResult.in);
-		this.addBlock(splitResult.out);
-		if (splitResult.queue) this.addBlock(splitResult.queue);
-		this.blockIn = splitResult.in;
-		this.blockOut = splitResult.out;
-		this.blockQueue = splitResult.queue;
-
-		await this.view.waitForUpdate(); // Loads blocks and their height, needed for computing variables
-
-		this.currentLink = new Link(this.blockIn, this.blockOut, 'y', 1); // TODO - Maybe add a setter / getter
-		this.addLink(this.currentLink);
-
-		if (this.blockQueue) {
-			this.linkQueue = new Link(this.blockOut, this.blockQueue, 'y', 1);
-			this.addLink(this.linkQueue);
-		}
-
+	setBlockOrigin(block: Block) {
+		this.origin?.constraints.forEach((c) => this.constraintsSolver.removeConstraint(c));
+		this.origin = {
+			block,
+			constraints: [
+				new kiwi.Constraint(block.variables.x, kiwi.Operator.Eq, 0, kiwi.Strength.strong),
+				new kiwi.Constraint(block.variables.y, kiwi.Operator.Eq, 0, kiwi.Strength.strong)
+			]
+		};
+		this.origin.constraints.forEach((c) => this.constraintsSolver.addConstraint(c));
 		this.constraintsSolver.updateVariables();
-		this.view.redraw();
-
-		this.spaceSolver.updateBlock(this.blockIn);
-		this.spaceSolver.updateBlock(this.blockOut);
-		if (this.blockQueue) this.spaceSolver.updateBlock(this.blockQueue);
+		this.blocks.forEach((b) => this.spaceSolver.updateBlock(b));
 	}
 
-	@DisableMethod
-	moveBlockOut({ dimension, sign }: Direction) {
-		if (!this.blockIn || !this.blockOut || !this.currentLink) return;
-
-		this.removeLink(this.currentLink);
-		this.currentLink = new Link(this.blockIn, this.blockOut, dimension, sign);
-		this.addLink(this.currentLink);
-
-		this.constraintsSolver.updateVariables();
-		this.view.redraw();
-
-		this.spaceSolver.updateBlock(this.blockOut);
-		if (this.blockQueue) this.spaceSolver.updateBlock(this.blockQueue);
+	removeBlockOrigin() {
+		this.origin?.constraints.forEach((c) => this.constraintsSolver.removeConstraint(c));
+		this.origin = undefined;
 	}
-
-	@DisableMethod
-	confirmBlockOut() {
-		if (!this.blockIn || !this.blockOut || !this.currentLink) return;
-
-		if (!this.blockQueue) {
-			this.blockIn = undefined;
-			this.blockOut = undefined;
-			this.currentLink = undefined;
-		} else {
-			this.blockIn = this.blockOut;
-			this.blockOut = this.blockQueue;
-			this.blockQueue = undefined;
-			this.currentLink = this.linkQueue;
-			this.linkQueue = undefined;
-		}
-	}
-
-	@DisableMethod
-	moveBlockIn(direction: Direction) {
-		if (!this.blockIn || !this.currentLink || !this.blockOut) return;
-
-		const viewCone = this.blockIn.getViewCone(direction);
-		const nextBlock = pipe(
-			this.spaceSolver.search(viewCone),
-			A.filter((b) => this.getBlockState(b) == 'idle'),
-			(foundBlocks) => this.blockIn?.getClosestBlock(foundBlocks)
-		);
-
-		if (!nextBlock) return;
-
-		this.blockIn = nextBlock;
-		this.removeLink(this.currentLink);
-		const { sign, dimension } = this.currentLink;
-		this.currentLink = new Link(this.blockIn, this.blockOut, dimension, sign);
-		this.addLink(this.currentLink);
-
-		this.constraintsSolver.updateVariables();
-		this.view.redraw();
-	}
-
-	getBlockState(block: Block): BlockState {
-		return 'idle';
-		// if (this.blockIn == block) return 'in';
-		// else if (this.blockOut == block) return 'out';
-		// else if (this.blockQueue == block) return 'queue';
-		// else return 'idle';
-	}
-}
-
-//
-
-export type BlockState = 'idle' | 'in' | 'out' | 'queue';
-
-//
-
-const FILO_CONTEXT_KEY = Symbol('AppState');
-
-export function initFilo() {
-	return setFilo(new Filo());
-}
-
-export function setFilo(filo: Filo) {
-	return setContext(FILO_CONTEXT_KEY, filo);
-}
-
-export function getFilo() {
-	return getContext<ReturnType<typeof initFilo>>(FILO_CONTEXT_KEY);
-}
-
-function DisableMethod(target: unknown, propertyKey: string, descriptor: PropertyDescriptor) {
-	descriptor.value = function () {
-		console.log(`${propertyKey} is disables`);
-	};
 }

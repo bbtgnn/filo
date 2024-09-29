@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getFilo } from '@/filo/filo.svelte';
+	import { getFiloManager } from '@/states/index.svelte';
 	import type { Block } from './block.svelte';
 	import type { Snippet } from 'svelte';
 
@@ -10,8 +10,8 @@
 
 	let { block, children }: Props = $props();
 
-	const filo = getFilo();
-	const state = $derived(filo.getBlockState(block));
+	const manager = getFiloManager();
+	const state = $derived(manager.getBlockState(block));
 </script>
 
 <div
@@ -19,6 +19,7 @@
 	class:state-idle={state == 'idle'}
 	class:state-positioning={state == 'out'}
 	class:state-queue={state == 'queue'}
+	class:state-focus={state == 'focus'}
 >
 	{@render children()}
 </div>
@@ -39,5 +40,10 @@
 	.state-queue {
 		background-color: ghostwhite;
 		opacity: 50%;
+	}
+
+	.state-focus {
+		background-color: white;
+		outline: 5px solid red;
 	}
 </style>
