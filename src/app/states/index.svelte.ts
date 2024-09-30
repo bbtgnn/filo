@@ -20,13 +20,11 @@ abstract class FiloBaseState<Context extends BaseRecord = BaseRecord> {
 
 export class IdleState extends FiloBaseState {
 	focusBlock(block: Block) {
-		this.manager.push(
-			new FocusState(this.manager, {
-				blocks: {
-					focused: block
-				}
-			})
-		);
+		this.manager.next('FocusState', {
+			blocks: {
+				focused: block
+			}
+		});
 	}
 }
 
@@ -64,11 +62,11 @@ export class FocusState extends FiloBaseState<{
 		filo.spaceSolver.updateBlock(blocks.out);
 		if (blocks.queue) filo.spaceSolver.updateBlock(blocks.queue);
 
-		this.manager.push(new PositioningState(this.manager, { blocks, links }));
+		this.manager.next('PositioningState', { blocks, links });
 	}
 
 	exit() {
-		this.manager.push(new IdleState(this.manager, {}));
+		this.manager.next('IdleState', {});
 	}
 }
 
@@ -88,33 +86,27 @@ export class PositioningState extends FiloBaseState<BlockSplitResult> {
 		filo.spaceSolver.updateBlock(blocks.out);
 		if (blocks.queue) filo.spaceSolver.updateBlock(blocks.queue);
 
-		this.manager.push(
-			new PositioningState(this.manager, { blocks, links: { ...links, active: newActiveLink } })
-		);
+		this.manager.next('PositioningState', { blocks, links: { ...links, active: newActiveLink } });
 	}
 
 	confirmBlockOut() {
 		const { blocks, links } = this.context;
 		if (blocks.queue && links.queue) {
-			this.manager.push(
-				new PositioningState(this.manager, {
-					blocks: {
-						in: blocks.out,
-						out: blocks.queue
-					},
-					links: {
-						active: links.queue
-					}
-				})
-			);
+			this.manager.next('PositioningState', {
+				blocks: {
+					in: blocks.out,
+					out: blocks.queue
+				},
+				links: {
+					active: links.queue
+				}
+			});
 		} else {
-			this.manager.push(
-				new FocusState(this.manager, {
-					blocks: {
-						focused: blocks.out
-					}
-				})
-			);
+			this.manager.next('FocusState', {
+				blocks: {
+					focused: blocks.out
+				}
+			});
 		}
 	}
 
@@ -172,16 +164,19 @@ export class FiloManager {
 	next<S extends FiloStateName>(state: S, context: FiloStateContext<FiloState<S>>): FiloState<S> {
 		const State = FiloStates[state];
 		// @ts-expect-error Type not working
-		return new State(this, context);
+		return this.history.push(new State(this, context));
 	}
 
-	push(state: FiloBaseState) {
-		this.history.push(state);
+	state<S extends FiloStateName>(name: S): FiloState<S> | undefined {
+		if (this.currentState instanceof FiloStates[name]) return this.currentState;
+		else return undefined;
 	}
+
+	//
 
 	undo(): Option.Option<FiloBaseState> {
 		const removedState = Option.fromNullable(this.history.pop());
-		if (Option.isNone(removedState)) this.push(new IdleState(this, {}));
+		if (Option.isNone(removedState)) this.next('IdleState', {});
 		return removedState;
 	}
 

@@ -37,11 +37,7 @@
 
 		return Record.toEntries(keyToDirection).map(([key, direction]) => ({
 			key,
-			callback: preventDefault(() => {
-				if (manager.currentState instanceof PositioningState) {
-					manager.currentState.moveBlockOut(direction);
-				}
-			})
+			callback: preventDefault(() => manager.state('PositioningState')?.moveBlockOut(direction))
 		}));
 	}
 
@@ -70,11 +66,8 @@
 		{
 			key: 'Enter',
 			callback: preventDefault(() => {
-				if (manager.currentState instanceof FocusState) {
-					manager.currentState.splitBlock();
-				} else if (manager.currentState instanceof PositioningState) {
-					manager.currentState.confirmBlockOut();
-				}
+				manager.state('FocusState')?.splitBlock();
+				manager.state('PositioningState')?.confirmBlockOut();
 			})
 		},
 		...createMoveBlockOutShortcuts()
