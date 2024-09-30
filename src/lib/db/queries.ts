@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2024 Giovanni Abbatepaolo <bbt.gnn@gmail.com>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // import type Surreal from 'surrealdb.js';
 // import type { Block, BlockIn, Dimension, DimensionIn, Link, LinkIn } from './schema';
 // import { RecordId } from 'surrealdb.js';

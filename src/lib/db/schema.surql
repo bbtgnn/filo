@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2024 Giovanni Abbatepaolo <bbt.gnn@gmail.com>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 -- DEFINE TABLE IF NOT EXISTS block SCHEMAFULL;
 
 -- DEFINE FIELD text ON TABLE block TYPE string;

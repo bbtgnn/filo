@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2024 Giovanni Abbatepaolo <bbt.gnn@gmail.com>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { Block } from '@/block/block.svelte';
 import { Link } from '@/link/link.svelte';
 import { ConstraintSolver, SpaceSolver } from '@/solver';
