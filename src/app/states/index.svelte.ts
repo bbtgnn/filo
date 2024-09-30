@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import type { BaseRecord } from '$lib/types';
 import type { Block, BlockSplitResult } from '@/block/block.svelte';
 import type { Filo } from '@/filo/filo.svelte';
 import { Link } from '@/link/link.svelte';
@@ -8,62 +9,16 @@ import { getContext, setContext } from 'svelte';
 
 //
 
-export class FiloManager {
-	history = $state<FiloState[]>([new IdleState(this, {})]);
-	currentState = $derived(this.history.at(-1));
-
-	constructor(public filo: Filo) {}
-
-	push(state: FiloState) {
-		this.history.push(state);
-	}
-
-	undo(): Option.Option<FiloState> {
-		const removedState = Option.fromNullable(this.history.pop());
-		if (Option.isNone(removedState)) this.push(new IdleState(this, {}));
-		return removedState;
-	}
-
-	getBlockState(block: Block): BlockState {
-		if (this.currentState instanceof IdleState) return 'idle';
-		else if (this.currentState instanceof FocusState) {
-			if (this.currentState.context.blocks.focused == block) return 'focus';
-			else return 'idle';
-		} else if (this.currentState instanceof PositioningState) {
-			if (this.currentState.context.blocks.in == block) return 'in';
-			else if (this.currentState.context.blocks.out == block) return 'out';
-			else if (this.currentState.context.blocks.queue == block) return 'queue';
-			else return 'idle';
-		} else return 'idle';
-	}
-}
-
-//
-
-const FILO_MANAGER_CONTEXT_KEY = Symbol('AppState');
-
-export function setFiloManager(manager: FiloManager) {
-	return setContext(FILO_MANAGER_CONTEXT_KEY, manager);
-}
-
-export function getFiloManager() {
-	return getContext<ReturnType<typeof setFiloManager>>(FILO_MANAGER_CONTEXT_KEY);
-}
-
-//
-
-export type BlockState = 'idle' | 'in' | 'out' | 'queue' | 'focus';
-
-//
-
-type FiloState = PositioningState | FocusState | IdleState;
-
-export class IdleState {
+abstract class FiloBaseState<Context extends BaseRecord = BaseRecord> {
 	constructor(
 		public manager: FiloManager,
-		public context = {}
+		public context: Context
 	) {}
+}
 
+//
+
+export class IdleState extends FiloBaseState {
 	focusBlock(block: Block) {
 		this.manager.push(
 			new FocusState(this.manager, {
@@ -77,16 +32,11 @@ export class IdleState {
 
 //
 
-export class FocusState {
-	constructor(
-		public manager: FiloManager,
-		public context: {
-			blocks: {
-				focused: Block;
-			};
-		}
-	) {}
-
+export class FocusState extends FiloBaseState<{
+	blocks: {
+		focused: Block;
+	};
+}> {
 	async splitBlock() {
 		if (!browser) throw new Error('not_browser');
 		const selection = window.getSelection();
@@ -122,12 +72,7 @@ export class FocusState {
 	}
 }
 
-export class PositioningState {
-	constructor(
-		public manager: FiloManager,
-		public context: BlockSplitResult
-	) {}
-
+export class PositioningState extends FiloBaseState<BlockSplitResult> {
 	moveBlockOut({ dimension, sign }: Direction) {
 		const { filo } = this.manager;
 		const { blocks, links } = this.context;
@@ -196,4 +141,74 @@ export class PositioningState {
 	// }
 
 	// Add methods
+}
+
+//
+
+const FiloStates = {
+	PositioningState,
+	FocusState,
+	IdleState
+};
+
+type FiloStateName = keyof typeof FiloStates;
+
+type FiloState<S extends FiloStateName> = InstanceType<(typeof FiloStates)[S]>;
+
+type FiloStateContext<T extends FiloBaseState> = T extends FiloBaseState<infer C> ? C : never;
+
+//
+
+export class FiloManager {
+	//
+
+	history = $state<FiloBaseState[]>([new IdleState(this, {})]);
+	currentState = $derived(this.history.at(-1));
+
+	constructor(public filo: Filo) {}
+
+	//
+
+	next<S extends FiloStateName>(state: S, context: FiloStateContext<FiloState<S>>): FiloState<S> {
+		const State = FiloStates[state];
+		// @ts-expect-error Type not working
+		return new State(this, context);
+	}
+
+	push(state: FiloBaseState) {
+		this.history.push(state);
+	}
+
+	undo(): Option.Option<FiloBaseState> {
+		const removedState = Option.fromNullable(this.history.pop());
+		if (Option.isNone(removedState)) this.push(new IdleState(this, {}));
+		return removedState;
+	}
+
+	getBlockState(block: Block): BlockState {
+		if (this.currentState instanceof IdleState) return 'idle';
+		else if (this.currentState instanceof FocusState) {
+			if (this.currentState.context.blocks.focused == block) return 'focus';
+			else return 'idle';
+		} else if (this.currentState instanceof PositioningState) {
+			if (this.currentState.context.blocks.in == block) return 'in';
+			else if (this.currentState.context.blocks.out == block) return 'out';
+			else if (this.currentState.context.blocks.queue == block) return 'queue';
+			else return 'idle';
+		} else return 'idle';
+	}
+}
+
+export type BlockState = 'idle' | 'in' | 'out' | 'queue' | 'focus';
+
+//
+
+const FILO_MANAGER_CONTEXT_KEY = Symbol('AppState');
+
+export function setFiloManager(manager: FiloManager) {
+	return setContext(FILO_MANAGER_CONTEXT_KEY, manager);
+}
+
+export function getFiloManager() {
+	return getContext<ReturnType<typeof setFiloManager>>(FILO_MANAGER_CONTEXT_KEY);
 }
