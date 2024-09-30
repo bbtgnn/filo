@@ -32,7 +32,6 @@ jobs:
           PUBLIC_DB_URI: indxdb://filo
           PUBLIC_DB_NAMESPACE: main
           PUBLIC_DB_NAME: filo_db
-          REPO_NAME: filo
         run: |
           pnpm run build
       - name: Upload Artifacts
