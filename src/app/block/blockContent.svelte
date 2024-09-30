@@ -1,29 +1,23 @@
-<script context="module" lang="ts">
-	import { Block, type BlockSplitResult } from './block.svelte';
-	export type OnSplit = (splitResult: BlockSplitResult, oldBlock: Block) => void | Promise<void>;
-</script>
-
 <script lang="ts">
-	import type { Action } from 'svelte/action';
 	import { config } from '@/config';
-	import { untrack } from 'svelte';
-	import { getFilo } from '@/filo/filo.svelte';
+	import { onMount, untrack } from 'svelte';
+	import { FocusState, getFiloManager, IdleState } from '@/states/index.svelte';
+	import type { Block } from './block.svelte';
+	import { clickOutside } from '$lib/utils';
 
 	//
 
 	type Props = {
 		block: Block;
-		onSplit?: OnSplit;
 	};
 
-	let { block, onSplit = () => {} }: Props = $props();
-
-	const filo = getFilo();
+	let { block }: Props = $props();
+	const manager = getFiloManager();
 
 	// TODO - Test
 	$effect(() => {
 		if (block.element) {
-			filo.updateBlockSize(
+			manager.filo.updateBlockSize(
 				untrack(() => block),
 				{
 					// TODO - check if block is not tracked, but block.element yes
@@ -34,28 +28,33 @@
 		}
 	});
 
-	// TODO - update event when block changes
-	const splitOnEnter: Action<HTMLDivElement, Block> = (element, block) => {
-		element.addEventListener('keydown', function (e) {
-			if (['ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp'].includes(e.key)) return;
-			else {
-				e.preventDefault();
-				if (e.key == 'Enter') {
-					const selection = window.getSelection();
-					if (!selection) return;
-					block.split(selection).match({ Just: (data) => onSplit(data, block), Nothing: () => {} });
-				}
-			}
-		});
-	};
+	//
+
+	function allowOnlyArrows(e: KeyboardEvent) {
+		if (['ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp'].includes(e.key)) return;
+		else e.preventDefault();
+	}
+
+	function handleClick(_: MouseEvent) {
+		manager.state('idle')?.focusBlock(block);
+	}
+
+	function handleClickOutside() {
+		manager.state('focus')?.exit();
+	}
 </script>
 
+<!-- TODO improve meaningful tabindex -->
 <div
 	id={block.id.toString()}
 	bind:this={block.element}
-	use:splitOnEnter={block}
+	use:clickOutside={handleClickOutside}
+	onclick={handleClick}
+	onkeydown={allowOnlyArrows}
 	contenteditable="true"
 	style:--p="{config.block.padding}px"
+	role="button"
+	tabindex="-1"
 >
 	{block.text}
 
@@ -71,7 +70,7 @@
 		{JSON.stringify(block.position)}
 	</span>
 
-	{#if filo.origin?.block == block}
+	{#if manager.filo.origin?.block == block}
 		<span
 			style="position: absolute; right: 0; top: 0; padding: 5px; background-color: blue; color: white;"
 		>

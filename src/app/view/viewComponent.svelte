@@ -1,16 +1,20 @@
 <script lang="ts">
-	import { getFilo } from '@/filo/filo.svelte';
+	import { getFiloManager, PositioningState } from '@/states/index.svelte';
 	import { untrack, type Snippet } from 'svelte';
 
 	type Props = {
 		children?: Snippet;
 	};
 
-	let { children }: Props = $props();
+	const { children }: Props = $props();
 
-	let filo = getFilo();
+	const manager = getFiloManager();
+	const filo = manager.filo;
+
 	$effect(() => untrack(() => filo.blocks.at(0))?.scrollIntoView());
-	$effect(() => filo.blockIn?.scrollIntoView());
+	$effect(() => {
+		manager.state('positioning')?.context.blocks.in.scrollIntoView();
+	});
 </script>
 
 <div

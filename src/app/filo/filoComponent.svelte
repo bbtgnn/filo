@@ -4,83 +4,30 @@
 	import BlockComponent from '@/block/blockComponent.svelte';
 	import LinkCanvas from '@/view/linkCanvas.svelte';
 	import LinkComponent from '@/link/linkComponent.svelte';
-	import { Filo, setFilo } from './filo.svelte';
-	import { shortcut, type ShortcutEventDetail, type ShortcutTrigger } from '@svelte-put/shortcut';
-	import type { Direction } from '@/types';
-	import { Record } from 'effect';
-	import { onMount } from 'svelte';
+	import { Filo } from './filo.svelte';
+
+	import { FiloManager, setFiloManager } from '@/states/index.svelte';
+	import FiloControls from './filoControls.svelte';
 
 	type Props = {
 		filo: Filo;
 	};
 
-	let { filo }: Props = $props();
-	setFilo(filo);
+	const { filo }: Props = $props();
 
-	//
-
-	type ShortcutCallback = (detail: ShortcutEventDetail) => void;
-
-	//
-
-	const ArrowKeys = ['ArrowUp', 'ArrowLeft', 'ArrowRight', 'ArrowDown'] as const;
-	type ArrowKey = (typeof ArrowKeys)[number];
-
-	const WASDKeys = ['w', 'a', 's', 'd'] as const;
-	type WASDKey = (typeof WASDKeys)[number];
-
-	const Directions = {
-		Up: { dimension: 'y', sign: -1 },
-		Down: { dimension: 'y', sign: 1 },
-		Left: { dimension: 'x', sign: -1 },
-		Right: { dimension: 'x', sign: 1 }
-	} as const satisfies Record<string, Direction>;
-
-	function createMoveBlockOutShortcuts(): ShortcutTrigger[] {
-		const keyToDirection: Record<ArrowKey, Direction> = {
-			ArrowUp: Directions.Up,
-			ArrowDown: Directions.Down,
-			ArrowLeft: Directions.Left,
-			ArrowRight: Directions.Right
-		};
-
-		return Record.toEntries(keyToDirection).map(([key, direction]) => ({
-			key,
-			callback: preventDefault(() => filo.moveBlockOut(direction))
-		}));
-	}
-
-	function createMoveBlockInShortcuts(): ShortcutTrigger[] {
-		const keyToDirection: Record<WASDKey, Direction> = {
-			w: Directions.Up,
-			s: Directions.Down,
-			a: Directions.Left,
-			d: Directions.Right
-		};
-
-		return Record.toEntries(keyToDirection).map(([key, direction]) => ({
-			key,
-			callback: preventDefault(() => filo.moveBlockIn(direction))
-		}));
-	}
-
-	function preventDefault(callback: ShortcutCallback): ShortcutCallback {
-		return (detail) => {
-			detail.originalEvent.preventDefault();
-			callback(detail);
-		};
-	}
-
-	const commands: ShortcutTrigger[] = [
-		...createMoveBlockOutShortcuts(),
-		...createMoveBlockInShortcuts(),
-		{ key: ' ', callback: preventDefault(() => filo.confirmBlockOut()) }
-	];
+	const manager = new FiloManager(filo);
+	setFiloManager(manager);
 </script>
 
-<svelte:window use:shortcut={{ trigger: commands }} />
+<FiloControls></FiloControls>
 
 <ViewComponent>
+	{#if manager.currentState && 'context' in manager.currentState}
+		<div>
+			<pre>{JSON.stringify(manager.currentState.context, null, 4)}</pre>
+		</div>
+	{/if}
+
 	<LinkCanvas>
 		{#each filo.links as link (link.id)}
 			<LinkComponent {link} />
@@ -89,7 +36,18 @@
 
 	<BlockCanvas>
 		{#each filo.blocks as block (block.id)}
-			<BlockComponent {block} onSplit={filo.handleBlockSplit} />
+			<BlockComponent {block} />
 		{/each}
 	</BlockCanvas>
 </ViewComponent>
+
+<style>
+	div {
+		position: fixed;
+		top: 0;
+		left: 0;
+		padding: 10px;
+		background-color: black;
+		color: white;
+	}
+</style>

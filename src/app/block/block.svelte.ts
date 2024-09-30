@@ -1,7 +1,6 @@
 import * as kiwi from '@lume/kiwi';
-import { Record, String, Tuple } from 'effect';
+import { Option, Record, String, Tuple } from 'effect';
 import type { Dimension, Direction, Point, Rectangle, Size } from '@/types';
-import Maybe, { just, nothing } from 'true-myth/maybe';
 import { config } from '@/config';
 import { Link } from '@/link/link.svelte';
 import RBush from 'rbush';
@@ -95,32 +94,50 @@ export class Block implements RBush.BBox {
 	}
 
 	// TODO - cleanup
-	split(selection: Selection): Maybe<BlockSplitResult> {
+	split(selection: Selection): Option.Option<BlockSplitResult> {
 		if (selection.isCollapsed) {
 			const cursorIndex = selection.anchorOffset;
 			if (cursorIndex === 0 || cursorIndex == this.text.length - 1) {
-				return nothing();
+				return Option.none();
 			} else {
-				return this.splitAtIndex(cursorIndex).map(([firstBlock, secondBlock]) => ({
-					in: firstBlock,
-					out: secondBlock,
-					link: new Link(firstBlock, secondBlock, 'y', 1) // TODO - Get from preferences
-				}));
+				return this.splitAtIndex(cursorIndex).pipe(
+					Option.map(([firstBlock, secondBlock]) => ({
+						blocks: {
+							in: firstBlock,
+							out: secondBlock
+						},
+						links: {
+							active: new Link(firstBlock, secondBlock, 'y', 1) // TODO - Get from preferences}
+						}
+					}))
+				);
 			}
 		} else {
 			const [selectionStart, selectionEnd] = [selection.anchorOffset, selection.focusOffset].sort();
 			if (selectionStart === 0) {
-				return this.splitAtIndex(selectionEnd).map(([firstBlock, secondBlock]) => ({
-					in: secondBlock,
-					out: firstBlock,
-					link: new Link(secondBlock, firstBlock, 'y', 1) // TODO - Get from preferences
-				}));
+				return this.splitAtIndex(selectionEnd).pipe(
+					Option.map(([firstBlock, secondBlock]) => ({
+						blocks: {
+							in: secondBlock,
+							out: firstBlock
+						},
+						links: {
+							active: new Link(secondBlock, firstBlock, 'y', 1) // TODO - Get from preferences
+						}
+					}))
+				);
 			} else if (selectionEnd == this.text.length - 1) {
-				return this.splitAtIndex(selectionStart).map(([firstBlock, secondBlock]) => ({
-					in: firstBlock,
-					out: secondBlock,
-					link: new Link(firstBlock, secondBlock, 'y', 1) // TODO - Get from preferences
-				}));
+				return this.splitAtIndex(selectionStart).pipe(
+					Option.map(([firstBlock, secondBlock]) => ({
+						blocks: {
+							in: firstBlock,
+							out: secondBlock
+						},
+						links: {
+							active: new Link(firstBlock, secondBlock, 'y', 1) // TODO - Get from preferences
+						}
+					}))
+				);
 			} else {
 				const chunks = [
 					this.text.slice(0, selectionStart),
@@ -129,20 +146,30 @@ export class Block implements RBush.BBox {
 				]
 					.filter(String.isNonEmpty)
 					.map((text, index) => new Block(this.id + index.toString(), text));
-				return just({
-					in: chunks[0],
-					out: chunks[1],
-					link: new Link(chunks[0], chunks[1], 'y', 1), // TODO - Get from preferences
-					queue: chunks[2]
+
+				const blockIn = chunks[0];
+				const blockOut = chunks[1];
+				const blockQueue: Block | undefined = chunks[2];
+
+				return Option.some({
+					blocks: {
+						in: blockIn,
+						out: blockOut,
+						queue: blockQueue
+					},
+					links: {
+						active: new Link(blockIn, blockOut, 'y', 1), // TODO - Get from preferences
+						queue: blockQueue ? new Link(blockOut, blockQueue, 'y', 1) : undefined
+					}
 				});
 			}
 		}
 	}
 
-	splitAtIndex(index: number): Maybe<[Block, Block]> {
-		if (index <= 0) return nothing();
+	splitAtIndex(index: number): Option.Option<[Block, Block]> {
+		if (index <= 0) return Option.none();
 		const chunks = [this.text.slice(0, index), this.text.slice(index)] as const;
-		return just(
+		return Option.some(
 			Tuple.make(
 				new Block(
 					this.id + '0', // TODO - refine, mabye some method
@@ -203,7 +230,10 @@ export class Block implements RBush.BBox {
 	}
 }
 
-export type BlockSplitResult = { in: Block; out: Block; queue?: Block; link: Link };
+export type BlockSplitResult = {
+	blocks: { in: Block; out: Block; queue?: Block };
+	links: { active: Link; queue?: Link };
+};
 
 export type SerializedBlock = {
 	text: string;
