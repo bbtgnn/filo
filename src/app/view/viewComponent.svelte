@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2024 Giovanni Abbatepaolo <bbt.gnn@gmail.com>
+
+SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
 <script lang="ts">
 	import { getFiloManager, PositioningState } from '@/states/index.svelte';
 	import { untrack, type Snippet } from 'svelte';

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2024 Giovanni Abbatepaolo <bbt.gnn@gmail.com>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import * as kiwi from '@lume/kiwi';
 import { Option, Record, String, Tuple } from 'effect';
 import type { Dimension, Direction, Point, Rectangle, Size } from '@/types';

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2024 Giovanni Abbatepaolo <bbt.gnn@gmail.com>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { browser } from '$app/environment';
 import type { BaseRecord } from '$lib/types';
 import type { Block, BlockSplitResult } from '@/block/block.svelte';
