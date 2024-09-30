@@ -4,7 +4,7 @@ import type { Block, BlockSplitResult } from '@/block/block.svelte';
 import type { Filo } from '@/filo/filo.svelte';
 import { Link } from '@/link/link.svelte';
 import type { Direction } from '@/types';
-import { Option } from 'effect';
+import { Option, pipe, Array as A } from 'effect';
 import { getContext, setContext } from 'svelte';
 
 //
@@ -18,9 +18,9 @@ abstract class FiloBaseState<Context extends BaseRecord = BaseRecord> {
 
 //
 
-export class IdleState extends FiloBaseState {
+export class IdleState extends FiloBaseState<Record<string, never>> {
 	focusBlock(block: Block) {
-		this.manager.next('FocusState', {
+		this.manager.nextState('focus', {
 			blocks: {
 				focused: block
 			}
@@ -62,11 +62,11 @@ export class FocusState extends FiloBaseState<{
 		filo.spaceSolver.updateBlock(blocks.out);
 		if (blocks.queue) filo.spaceSolver.updateBlock(blocks.queue);
 
-		this.manager.next('PositioningState', { blocks, links });
+		this.manager.nextState('positioning', { blocks, links });
 	}
 
 	exit() {
-		this.manager.next('IdleState', {});
+		this.manager.nextState('idle', {});
 	}
 }
 
@@ -86,13 +86,13 @@ export class PositioningState extends FiloBaseState<BlockSplitResult> {
 		filo.spaceSolver.updateBlock(blocks.out);
 		if (blocks.queue) filo.spaceSolver.updateBlock(blocks.queue);
 
-		this.manager.next('PositioningState', { blocks, links: { ...links, active: newActiveLink } });
+		this.manager.nextState('positioning', { blocks, links: { ...links, active: newActiveLink } });
 	}
 
 	confirmBlockOut() {
 		const { blocks, links } = this.context;
 		if (blocks.queue && links.queue) {
-			this.manager.next('PositioningState', {
+			this.manager.nextState('positioning', {
 				blocks: {
 					in: blocks.out,
 					out: blocks.queue
@@ -102,7 +102,7 @@ export class PositioningState extends FiloBaseState<BlockSplitResult> {
 				}
 			});
 		} else {
-			this.manager.next('FocusState', {
+			this.manager.nextState('focus', {
 				blocks: {
 					focused: blocks.out
 				}
@@ -110,50 +110,62 @@ export class PositioningState extends FiloBaseState<BlockSplitResult> {
 		}
 	}
 
-	// moveBlockIn(direction: Direction) {
-	// 	if (!this.blockIn || !this.currentLink || !this.blockOut) return;
+	moveBlockIn(direction: Direction) {
+		const { filo } = this.manager;
+		const { blocks, links } = this.context;
 
-	// 	const viewCone = this.blockIn.getViewCone(direction);
-	// 	const nextBlock = pipe(
-	// 		this.spaceSolver.search(viewCone),
-	// 		A.filter((b) => this.getBlockState(b) == 'idle'),
-	// 		(foundBlocks) => this.blockIn?.getClosestBlock(foundBlocks)
-	// 	);
+		const viewCone = blocks.in.getViewCone(direction);
+		const newBlockIn = pipe(
+			filo.spaceSolver.search(viewCone),
+			A.filter((b) => this.manager.getBlockState(b) == 'idle'),
+			(foundBlocks) => blocks.in?.getClosestBlock(foundBlocks)
+		);
 
-	// 	if (!nextBlock) return;
+		if (!newBlockIn) return;
 
-	// 	this.blockIn = nextBlock;
-	// 	this.removeLink(this.currentLink);
-	// 	const { sign, dimension } = this.currentLink;
-	// 	this.currentLink = new Link(this.blockIn, this.blockOut, dimension, sign);
-	// 	this.addLink(this.currentLink);
+		const { sign, dimension } = links.active;
+		const newActiveLink = new Link(newBlockIn, blocks.out, dimension, sign);
+		filo.removeLink(links.active);
+		filo.addLink(newActiveLink);
 
-	// 	this.constraintsSolver.updateVariables();
-	// 	this.view.redraw();
-	// }
+		filo.constraintsSolver.updateVariables();
+		filo.view.redraw();
 
-	// Add methods
+		this.manager.nextState('positioning', {
+			blocks: {
+				...blocks,
+				in: newBlockIn
+			},
+			links: {
+				...links,
+				active: newActiveLink
+			}
+		});
+	}
 }
 
 //
 
 const FiloStates = {
-	PositioningState,
-	FocusState,
-	IdleState
+	idle: IdleState,
+	focus: FocusState,
+	positioning: PositioningState
 };
 
 type FiloStateName = keyof typeof FiloStates;
+type FiloStateType<S extends FiloStateName> = (typeof FiloStates)[S];
 
-type FiloState<S extends FiloStateName> = InstanceType<(typeof FiloStates)[S]>;
+type FiloState<S extends FiloStateName> = InstanceType<FiloStateType<S>>;
+type FiloStateContext<S extends FiloStateName> = ConstructorParameters<FiloStateType<S>>[1];
 
-type FiloStateContext<T extends FiloBaseState> = T extends FiloBaseState<infer C> ? C : never;
+type FiloStateConstructor<S extends FiloStateName> = new (
+	manager: FiloManager,
+	context: FiloStateContext<S>
+) => FiloState<S>;
 
 //
 
 export class FiloManager {
-	//
-
 	history = $state<FiloBaseState[]>([new IdleState(this, {})]);
 	currentState = $derived(this.history.at(-1));
 
@@ -161,14 +173,16 @@ export class FiloManager {
 
 	//
 
-	next<S extends FiloStateName>(state: S, context: FiloStateContext<FiloState<S>>): FiloState<S> {
-		const State = FiloStates[state];
-		// @ts-expect-error Type not working
-		return this.history.push(new State(this, context));
+	nextState<S extends FiloStateName>(stateName: S, context: FiloStateContext<S>): FiloState<S> {
+		const StateClass = FiloStates[stateName] as FiloStateConstructor<S>;
+		const stateInstance = new StateClass(this, context);
+		this.history.push(stateInstance);
+		return stateInstance;
 	}
 
-	state<S extends FiloStateName>(name: S): FiloState<S> | undefined {
-		if (this.currentState instanceof FiloStates[name]) return this.currentState;
+	state<S extends FiloStateName>(stateName: S): FiloState<S> | undefined {
+		const StateClass = FiloStates[stateName] as FiloStateConstructor<S>;
+		if (this.currentState instanceof StateClass) return this.currentState;
 		else return undefined;
 	}
 
@@ -176,21 +190,16 @@ export class FiloManager {
 
 	undo(): Option.Option<FiloBaseState> {
 		const removedState = Option.fromNullable(this.history.pop());
-		if (Option.isNone(removedState)) this.next('IdleState', {});
+		if (Option.isNone(removedState)) this.nextState('idle', {});
 		return removedState;
 	}
 
 	getBlockState(block: Block): BlockState {
-		if (this.currentState instanceof IdleState) return 'idle';
-		else if (this.currentState instanceof FocusState) {
-			if (this.currentState.context.blocks.focused == block) return 'focus';
-			else return 'idle';
-		} else if (this.currentState instanceof PositioningState) {
-			if (this.currentState.context.blocks.in == block) return 'in';
-			else if (this.currentState.context.blocks.out == block) return 'out';
-			else if (this.currentState.context.blocks.queue == block) return 'queue';
-			else return 'idle';
-		} else return 'idle';
+		if (this.state('focus')?.context.blocks.focused == block) return 'focus';
+		else if (this.state('positioning')?.context.blocks.in == block) return 'in';
+		else if (this.state('positioning')?.context.blocks.out == block) return 'out';
+		else if (this.state('positioning')?.context.blocks.queue == block) return 'queue';
+		else return 'idle';
 	}
 }
 

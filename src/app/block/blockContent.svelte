@@ -36,15 +36,11 @@
 	}
 
 	function handleClick(_: MouseEvent) {
-		if (manager.currentState instanceof IdleState) {
-			manager.currentState.focusBlock(block);
-		}
+		manager.state('idle')?.focusBlock(block);
 	}
 
 	function handleClickOutside() {
-		if (manager.currentState instanceof FocusState) {
-			manager.currentState.exit();
-		}
+		manager.state('focus')?.exit();
 	}
 </script>
 

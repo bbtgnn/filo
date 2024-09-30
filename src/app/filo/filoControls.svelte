@@ -37,23 +37,23 @@
 
 		return Record.toEntries(keyToDirection).map(([key, direction]) => ({
 			key,
-			callback: preventDefault(() => manager.state('PositioningState')?.moveBlockOut(direction))
+			callback: preventDefault(() => manager.state('positioning')?.moveBlockOut(direction))
 		}));
 	}
 
-	// function createMoveBlockInShortcuts(): ShortcutTrigger[] {
-	// 	const keyToDirection: Record<WASDKey, Direction> = {
-	// 		w: Directions.Up,
-	// 		s: Directions.Down,
-	// 		a: Directions.Left,
-	// 		d: Directions.Right
-	// 	};
+	function createMoveBlockInShortcuts(): ShortcutTrigger[] {
+		const keyToDirection: Record<WASDKey, Direction> = {
+			w: Directions.Up,
+			s: Directions.Down,
+			a: Directions.Left,
+			d: Directions.Right
+		};
 
-	// 	return Record.toEntries(keyToDirection).map(([key, direction]) => ({
-	// 		key,
-	// 		callback: preventDefault(() => filo.moveBlockIn(direction))
-	// 	}));
-	// }
+		return Record.toEntries(keyToDirection).map(([key, direction]) => ({
+			key,
+			callback: preventDefault(() => manager.state('positioning')?.moveBlockIn(direction))
+		}));
+	}
 
 	function preventDefault(callback: ShortcutCallback): ShortcutCallback {
 		return (detail) => {
@@ -66,12 +66,12 @@
 		{
 			key: 'Enter',
 			callback: preventDefault(() => {
-				manager.state('FocusState')?.splitBlock();
-				manager.state('PositioningState')?.confirmBlockOut();
+				manager.state('focus')?.splitBlock();
+				manager.state('positioning')?.confirmBlockOut();
 			})
 		},
-		...createMoveBlockOutShortcuts()
-		// ...createMoveBlockInShortcuts(),
+		...createMoveBlockOutShortcuts(),
+		...createMoveBlockInShortcuts()
 	];
 </script>
 

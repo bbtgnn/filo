@@ -13,9 +13,7 @@
 
 	$effect(() => untrack(() => filo.blocks.at(0))?.scrollIntoView());
 	$effect(() => {
-		if (manager.currentState instanceof PositioningState) {
-			manager.currentState.context.blocks.in.scrollIntoView();
-		}
+		manager.state('positioning')?.context.blocks.in.scrollIntoView();
 	});
 </script>
 
