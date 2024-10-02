@@ -69,6 +69,14 @@ export class FocusState extends FiloBaseState<{
 		this.manager.nextState('positioning', { blocks, links });
 	}
 
+	focusBlock(block: Block) {
+		this.manager.nextState('focus', {
+			blocks: {
+				focused: block
+			}
+		});
+	}
+
 	exit() {
 		this.manager.nextState('idle', {});
 	}

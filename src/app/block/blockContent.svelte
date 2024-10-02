@@ -43,6 +43,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 	function handleClick(_: MouseEvent) {
 		manager.state('idle')?.focusBlock(block);
+		manager.state('focus')?.focusBlock(block);
 	}
 </script>
 

@@ -28,11 +28,11 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 <FiloControls></FiloControls>
 
 <ViewComponent>
-	{#if manager.currentState && 'context' in manager.currentState}
-		<div>
-			<pre>{JSON.stringify(manager.currentState.context, null, 4)}</pre>
-		</div>
-	{/if}
+	<div>
+		{#each manager.history as state, index}
+			<p>{state.constructor.name}</p>
+		{/each}
+	</div>
 
 	<LinkCanvas>
 		{#each filo.links as link (link.id)}
