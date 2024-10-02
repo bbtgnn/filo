@@ -9,7 +9,7 @@ import { FiloBaseState, FocusState, IdleState, PositioningState } from './index.
 import { getContext, setContext } from 'svelte';
 import { Option } from 'effect';
 
-//
+/* Types mumbo-jumbo (the real deal) */
 
 type FiloStates = typeof FiloManager.states;
 
@@ -24,7 +24,7 @@ type FiloStateClass<S extends FiloStateName> = new (
 	context: FiloStateContext<S>
 ) => FiloState<S>;
 
-//
+/* - */
 
 export class FiloManager {
 	history = $state<FiloBaseState[]>([new IdleState(this, {})]);
@@ -76,7 +76,7 @@ export class FiloManager {
 
 export type BlockState = 'idle' | 'in' | 'out' | 'queue' | 'focus';
 
-//
+/* Context */
 
 const FILO_MANAGER_CONTEXT_KEY = Symbol('AppState');
 

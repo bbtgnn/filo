@@ -6,10 +6,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 <script lang="ts">
 	import { config } from '@/config';
-	import { onMount, untrack } from 'svelte';
-	import { FocusState, getFiloManager, IdleState } from '@/states/index.svelte';
+	import { untrack } from 'svelte';
+	import { getFiloManager } from '@/fsm/filoManager.svelte';
 	import type { Block } from './block.svelte';
-	import { clickOutside } from '$lib/utils';
+	// import { clickOutside } from '$lib/utils';
 
 	//
 

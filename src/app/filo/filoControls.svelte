@@ -8,7 +8,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 	import { shortcut, type ShortcutEventDetail, type ShortcutTrigger } from '@svelte-put/shortcut';
 	import type { Direction } from '@/types';
 	import { Record } from 'effect';
-	import { FocusState, getFiloManager, PositioningState } from '@/states/index.svelte';
+	import { getFiloManager } from '@/fsm/filoManager.svelte';
 
 	//
 
