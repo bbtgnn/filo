@@ -44,17 +44,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 	function handleClick(_: MouseEvent) {
 		manager.state('idle')?.focusBlock(block);
 	}
-
-	function handleClickOutside() {
-		manager.state('focus')?.exit();
-	}
 </script>
 
 <!-- TODO improve meaningful tabindex -->
 <div
 	id={block.id.toString()}
 	bind:this={block.element}
-	use:clickOutside={handleClickOutside}
 	onclick={handleClick}
 	onkeydown={allowOnlyArrows}
 	contenteditable="true"

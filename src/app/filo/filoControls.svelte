@@ -76,6 +76,16 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 				manager.state('positioning')?.confirmBlockOut();
 			})
 		},
+		{
+			key: 'Escape',
+			callback: preventDefault(() => {
+				manager.state('focus')?.exit();
+			})
+		},
+		{
+			key: ' ',
+			callback: preventDefault(() => {})
+		},
 		...createMoveBlockOutShortcuts(),
 		...createMoveBlockInShortcuts()
 	];
