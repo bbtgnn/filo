@@ -45,15 +45,17 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 		manager.state('idle')?.focusBlock(block);
 		manager.state('focus')?.focusBlock(block);
 	}
+
+	const state = $derived(manager.getBlockState(block));
 </script>
 
-<!-- TODO improve meaningful tabindex -->
+<!-- TODO implement meaningful tabindex -->
 <div
 	id={block.id.toString()}
 	bind:this={block.element}
 	onclick={handleClick}
 	onkeydown={allowOnlyArrows}
-	contenteditable="true"
+	contenteditable={state == 'focus' ? true : false}
 	style:--p="{config.block.padding}px"
 	role="button"
 	tabindex="-1"
