@@ -39,6 +39,10 @@ export class FocusState extends FiloBaseState<{
 		focused: Block;
 	};
 }> {
+	get block() {
+		return this.context.blocks.focused;
+	}
+
 	async splitBlock() {
 		if (!browser) throw new Error('not_browser');
 		const selection = window.getSelection();
@@ -70,6 +74,7 @@ export class FocusState extends FiloBaseState<{
 	}
 
 	focusBlock(block: Block) {
+		if (this.block == block) return;
 		this.manager.nextState('focus', {
 			blocks: {
 				focused: block
@@ -100,7 +105,7 @@ export class PositioningState extends FiloBaseState<BlockSplitResult> {
 		filo.spaceSolver.updateBlock(blocks.out);
 		if (blocks.queue) filo.spaceSolver.updateBlock(blocks.queue);
 
-		this.manager.nextState('positioning', { blocks, links: { ...links, active: newActiveLink } });
+		this.context = { blocks, links: { ...links, active: newActiveLink } };
 	}
 
 	confirmBlockOut() {
@@ -145,7 +150,7 @@ export class PositioningState extends FiloBaseState<BlockSplitResult> {
 		filo.constraintsSolver.updateVariables();
 		filo.view.redraw();
 
-		this.manager.nextState('positioning', {
+		this.context = {
 			blocks: {
 				...blocks,
 				in: newBlockIn
@@ -154,6 +159,6 @@ export class PositioningState extends FiloBaseState<BlockSplitResult> {
 				...links,
 				active: newActiveLink
 			}
-		});
+		};
 	}
 }
