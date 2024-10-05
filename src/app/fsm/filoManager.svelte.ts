@@ -61,7 +61,7 @@ export class FiloManager {
 
 	undo(): Option.Option<FiloBaseState> {
 		const removedState = Option.fromNullable(this.history.pop());
-		if (Option.isNone(removedState)) this.nextState('idle', {});
+		if (this.history.length === 0) this.nextState('idle', {});
 		return removedState;
 	}
 
