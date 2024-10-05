@@ -4,7 +4,7 @@
 
 import type { Filo } from '@/filo/filo.svelte';
 import type { Block } from '@/block/block.svelte';
-import { FiloBaseState, FocusState, IdleState, PositioningState } from './index.svelte';
+import { FiloBaseState, FocusState, IdleState, PositioningState } from './states.svelte';
 
 import { getContext, setContext } from 'svelte';
 import { Option } from 'effect';
