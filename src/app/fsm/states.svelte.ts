@@ -39,42 +39,60 @@ export class FocusState extends FiloBaseState<{
 		focused: Block;
 	};
 }> {
-	get block() {
+	get focusedBlock() {
 		return this.context.blocks.focused;
 	}
 
-	async splitBlock() {
+	async splitBlock(): Promise<Command> {
 		if (!browser) throw new Error('not_browser');
 		const selection = window.getSelection();
-		if (!selection) return;
+		if (!selection) return noop();
+		const splitResult = this.focusedBlock.split(selection);
+		if (Option.isNone(splitResult)) return noop();
 
-		const splitResult = this.context.blocks.focused.split(selection);
-		if (Option.isNone(splitResult)) return;
 		const { blocks, links } = splitResult.pipe(Option.getOrThrow);
-
 		const { filo } = this.manager;
 
-		filo.replaceBlock(this.context.blocks.focused, blocks.in);
-		filo.addBlock(blocks.out);
-		if (blocks.queue) filo.addBlock(blocks.queue);
+		return {
+			apply: async () => {
+				filo.replaceBlock(this.focusedBlock, blocks.in);
+				filo.addBlock(blocks.out);
+				if (blocks.queue) filo.addBlock(blocks.queue);
 
-		await filo.view.waitForUpdate(); // Loads blocks and their height, needed for computing variables
+				await filo.view.waitForUpdate(); // Loads blocks and their height, needed for computing variables
 
-		filo.addLink(links.active);
-		if (links.queue) filo.addLink(links.queue);
+				filo.addLink(links.active);
+				if (links.queue) filo.addLink(links.queue);
 
-		filo.constraintsSolver.updateVariables();
-		filo.view.redraw();
+				filo.constraintsSolver.updateVariables();
+				filo.view.redraw();
 
-		filo.spaceSolver.updateBlock(blocks.in);
-		filo.spaceSolver.updateBlock(blocks.out);
-		if (blocks.queue) filo.spaceSolver.updateBlock(blocks.queue);
+				filo.spaceSolver.updateBlock(blocks.in);
+				filo.spaceSolver.updateBlock(blocks.out);
+				if (blocks.queue) filo.spaceSolver.updateBlock(blocks.queue);
 
-		this.manager.nextState('positioning', { blocks, links });
+				this.manager.nextState('positioning', { blocks, links });
+			},
+			undo: async () => {
+				filo.replaceBlock(blocks.in, this.focusedBlock);
+				filo.removeBlock(blocks.out);
+				if (blocks.queue) filo.removeBlock(blocks.queue);
+
+				await filo.view.waitForUpdate();
+
+				filo.removeLink(links.active);
+				if (links.queue) filo.removeLink(links.queue);
+
+				filo.constraintsSolver.updateVariables();
+				filo.view.redraw();
+
+				filo.spaceSolver.updateBlock(this.focusedBlock);
+			}
+		};
 	}
 
 	focusBlock(block: Block) {
-		if (this.block == block) return;
+		if (this.focusedBlock == block) return;
 		this.manager.nextState('focus', {
 			blocks: {
 				focused: block
@@ -161,4 +179,21 @@ export class PositioningState extends FiloBaseState<BlockSplitResult> {
 			}
 		};
 	}
+}
+
+//
+
+interface Command {
+	apply: () => void | Promise<void>;
+	undo: () => void | Promise<void>;
+}
+
+class Noop implements Command {
+	constructor() {}
+	apply() {}
+	undo() {}
+}
+
+function noop(): Noop {
+	return new Noop();
 }
