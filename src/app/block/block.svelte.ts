@@ -16,12 +16,7 @@ import { RecordId } from 'surrealdb';
 export class Block implements RBush.BBox {
 	id: string;
 	text: string;
-	variables: Record<Dimension | Size, kiwi.Variable> = {
-		x: new kiwi.Variable(),
-		y: new kiwi.Variable(),
-		height: new kiwi.Variable(),
-		width: new kiwi.Variable()
-	};
+	variables: Record<Dimension | Size, kiwi.Variable>;
 
 	element = $state<HTMLElement | undefined>(undefined);
 	height = $derived.by(() => this.element?.clientHeight ?? config.block.baseHeight);
@@ -30,8 +25,14 @@ export class Block implements RBush.BBox {
 	/* */
 
 	constructor(id: string, text: string) {
-		this.text = text;
 		this.id = id;
+		this.text = text;
+		this.variables = {
+			x: new kiwi.Variable(this.id + '_x'),
+			y: new kiwi.Variable(this.id + '_y'),
+			width: new kiwi.Variable(this.id + '_w'),
+			height: new kiwi.Variable(this.id + '_h')
+		};
 	}
 
 	/* Geometry */

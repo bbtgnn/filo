@@ -8,7 +8,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 	import { shortcut, type ShortcutEventDetail, type ShortcutTrigger } from '@svelte-put/shortcut';
 	import type { Direction } from '@/types';
 	import { Record } from 'effect';
-	import { getFiloManager } from '@/fsm/filoManager.svelte';
+	import { getFiloManager } from '@/manager';
 
 	//
 
@@ -43,7 +43,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 		return Record.toEntries(keyToDirection).map(([key, direction]) => ({
 			key,
-			callback: preventDefault(() => manager.state('positioning')?.moveBlockOut(direction))
+			callback: preventDefault(() =>
+				manager
+					.state('positioning')
+					?.moveBlockOut(direction)
+					.pipe((c) => manager.run(c))
+			)
 		}));
 	}
 
@@ -57,7 +62,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 		return Record.toEntries(keyToDirection).map(([key, direction]) => ({
 			key,
-			callback: preventDefault(() => manager.state('positioning')?.moveBlockIn(direction))
+			callback: preventDefault(() =>
+				manager
+					.state('positioning')
+					?.moveBlockIn(direction)
+					.pipe((c) => manager.run(c))
+			)
 		}));
 	}
 
@@ -72,14 +82,23 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 		{
 			key: 'Enter',
 			callback: preventDefault(() => {
-				manager.state('focus')?.splitBlock();
-				manager.state('positioning')?.confirmBlockOut();
+				manager
+					.state('focus')
+					?.splitBlock()
+					.pipe((c) => manager.run(c));
+				manager
+					.state('positioning')
+					?.confirmBlockOut()
+					.pipe((c) => manager.run(c));
 			})
 		},
 		{
 			key: 'Escape',
 			callback: preventDefault(() => {
-				manager.state('focus')?.exit();
+				manager
+					.state('focus')
+					?.exit()
+					.pipe((c) => manager.run(c));
 			})
 		},
 		{

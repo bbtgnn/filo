@@ -12,7 +12,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 	import LinkComponent from '@/link/linkComponent.svelte';
 	import { Filo } from './filo.svelte';
 
-	import { FiloManager, setFiloManager } from '@/fsm/filoManager.svelte';
+	import { FiloManager, setFiloManager } from '@/manager';
 	import FiloControls from './filoControls.svelte';
 
 	type Props = {
@@ -29,7 +29,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 <ViewComponent>
 	<div>
-		{#each manager.history as state, index}
+		{#each manager.stateHistory as state, index}
 			<p>{state.constructor.name}</p>
 		{/each}
 	</div>

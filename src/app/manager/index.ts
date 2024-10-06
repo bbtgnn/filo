@@ -4,10 +4,15 @@
 
 import type { Filo } from '@/filo/filo.svelte';
 import type { Block } from '@/block/block.svelte';
-import { FiloBaseState, FocusState, IdleState, PositioningState } from './states.svelte';
+import {
+	FiloBaseState,
+	FocusState,
+	IdleState,
+	PositioningState,
+	type StateCommand
+} from '@/states/index.svelte';
 
 import { getContext, setContext } from 'svelte';
-import { Option } from 'effect';
 
 /* Types mumbo-jumbo (the real deal) */
 
@@ -20,15 +25,18 @@ type FiloState<S extends FiloStateName> = InstanceType<FiloStateType<S>>;
 type FiloStateContext<S extends FiloStateName> = ConstructorParameters<FiloStateType<S>>[1];
 
 type FiloStateClass<S extends FiloStateName> = new (
-	manager: FiloManager,
+	filo: Filo,
 	context: FiloStateContext<S>
 ) => FiloState<S>;
 
 /* - */
 
 export class FiloManager {
-	history = $state<FiloBaseState[]>([new IdleState(this, {})]);
-	currentState = $derived(this.history.at(-1));
+	stateHistory = $state<FiloBaseState[]>([]);
+	currentState = $derived(this.stateHistory.at(-1));
+
+	undoStack = $state<StateCommand[]>([]);
+	redoStack = $state<StateCommand[]>([]);
 
 	static states = {
 		idle: IdleState,
@@ -36,14 +44,33 @@ export class FiloManager {
 		positioning: PositioningState
 	};
 
-	constructor(public filo: Filo) {}
+	constructor(private filo: Filo) {
+		const nextState = new IdleState(this.filo, {});
+		this.stateHistory.push(nextState);
+	}
+
+	//
+
+	async run(command: StateCommand) {
+		const nextState = await command.apply();
+		this.stateHistory.push(nextState);
+		this.undoStack.push(command);
+	}
+
+	async undo() {
+		const lastCommand = this.undoStack.pop();
+		if (!lastCommand) return; // TODO - Improve
+		await lastCommand.undo();
+		const lastState = this.stateHistory.pop();
+		if (!lastState) this.stateHistory.push(new IdleState(this.filo, {}));
+	}
 
 	//
 
 	nextState<S extends FiloStateName>(stateName: S, context: FiloStateContext<S>): FiloState<S> {
 		const StateClass = this.getStateClass(stateName);
-		const stateInstance = new StateClass(this, context);
-		this.history.push(stateInstance);
+		const stateInstance = new StateClass(this.filo, context);
+		this.stateHistory.push(stateInstance);
 		return stateInstance;
 	}
 
@@ -58,12 +85,6 @@ export class FiloManager {
 	}
 
 	//
-
-	undo(): Option.Option<FiloBaseState> {
-		const removedState = Option.fromNullable(this.history.pop());
-		if (this.history.length === 0) this.nextState('idle', {});
-		return removedState;
-	}
 
 	getBlockState(block: Block): BlockState {
 		if (this.state('focus')?.context.blocks.focused == block) return 'focus';
