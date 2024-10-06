@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 
 <script lang="ts">
-	import { getFiloManager } from '@/manager';
+	import { getFiloManager } from '@/manager/index.svelte';
 	import type { Block } from './block.svelte';
 	import type { Snippet } from 'svelte';
 

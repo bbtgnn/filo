@@ -44,7 +44,7 @@ export class FiloManager {
 		positioning: PositioningState
 	};
 
-	constructor(private filo: Filo) {
+	constructor(public filo: Filo) {
 		const nextState = new IdleState(this.filo, {});
 		this.stateHistory.push(nextState);
 	}

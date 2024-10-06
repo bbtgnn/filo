@@ -12,7 +12,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 	import LinkComponent from '@/link/linkComponent.svelte';
 	import { Filo } from './filo.svelte';
 
-	import { FiloManager, setFiloManager } from '@/manager';
+	import { FiloManager, setFiloManager } from '@/manager/index.svelte';
 	import FiloControls from './filoControls.svelte';
 
 	type Props = {
