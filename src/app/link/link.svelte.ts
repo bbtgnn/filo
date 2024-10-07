@@ -8,7 +8,6 @@ import { type Dimension } from '@/types';
 import { config } from '@/config';
 import type { Block } from '@/block/block.svelte';
 import { dimensionToSize, getPerpendicularDimension } from '@/utils';
-import { nanoid } from 'nanoid';
 
 //
 
@@ -33,7 +32,7 @@ export class Link {
 		this.dimension = dimension;
 		this.sign = sign;
 		this.constraints = this.getConstraints();
-		this.id = nanoid(5);
+		this.id = `${blockIn.id}->${blockOut.id}`;
 	}
 
 	/* DB */

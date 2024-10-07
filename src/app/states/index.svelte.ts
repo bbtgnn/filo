@@ -89,11 +89,11 @@ export class FocusState extends FiloBaseState<{
 				return new PositioningState(filo, { blocks, links });
 			},
 			undo: async () => {
-				if (links.queue) filo.removeLink(links.queue);
-				filo.removeLink(links.active);
+				if (links.queue) filo.removeLink(links.queue.id);
+				filo.removeLink(links.active.id);
 
-				if (blocks.queue) filo.removeBlock(blocks.queue);
-				filo.removeBlock(blocks.out);
+				if (blocks.queue) filo.removeBlock(blocks.queue.id);
+				filo.removeBlock(blocks.out.id);
 				filo.replaceBlock(blocks.in, this.focusedBlock);
 
 				await filo.view.waitForUpdate();
@@ -142,7 +142,7 @@ export class PositioningState extends FiloBaseState<BlockSplitResult> {
 		return new StateCommand({
 			name: this.moveBlockOut.name,
 			apply: () => {
-				filo.removeLink(this.context.links.active);
+				filo.removeLink(this.context.links.active.id);
 				filo.addLink(newActiveLink);
 
 				filo.constraintsSolver.updateVariables();
@@ -157,7 +157,7 @@ export class PositioningState extends FiloBaseState<BlockSplitResult> {
 				});
 			},
 			undo: () => {
-				filo.removeLink(newActiveLink);
+				filo.removeLink(newActiveLink.id);
 				filo.addLink(this.context.links.active);
 
 				filo.constraintsSolver.updateVariables();
@@ -217,7 +217,7 @@ export class PositioningState extends FiloBaseState<BlockSplitResult> {
 		return new StateCommand({
 			name: this.moveBlockIn.name,
 			apply: () => {
-				filo.removeLink(links.active);
+				filo.removeLink(links.active.id);
 				filo.addLink(newActiveLink);
 
 				filo.constraintsSolver.updateVariables();
@@ -235,7 +235,7 @@ export class PositioningState extends FiloBaseState<BlockSplitResult> {
 				});
 			},
 			undo: () => {
-				filo.removeLink(newActiveLink);
+				filo.removeLink(newActiveLink.id);
 				filo.addLink(links.active);
 
 				filo.constraintsSolver.updateVariables();
