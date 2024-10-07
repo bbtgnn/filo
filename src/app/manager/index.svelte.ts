@@ -8,6 +8,7 @@ import {
 	FiloBaseState,
 	FocusState,
 	IdleState,
+	NoopCommand,
 	PositioningState,
 	type StateCommand
 } from '@/states/index.svelte';
@@ -51,6 +52,7 @@ export class FiloManager {
 	//
 
 	async run(command: StateCommand) {
+		if (command instanceof NoopCommand) return;
 		const nextState = await command.apply();
 		this.undoStack.push(command);
 		if (this.currentState?.context == nextState.context) return;

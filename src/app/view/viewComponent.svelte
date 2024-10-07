@@ -10,9 +10,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 	type Props = {
 		children?: Snippet;
+		class?: string;
 	};
 
-	const { children }: Props = $props();
+	const props: Props = $props();
 
 	const manager = getFiloManager();
 	const filo = manager.filo;
@@ -23,10 +24,13 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 	});
 </script>
 
-<div style="overflow: scroll; position: relative; background-color: gainsboro;">
+<div
+	class="h-[60vh] w-screen {props.class}"
+	style="overflow: scroll; position: relative; background-color: gainsboro;"
+>
 	{#key filo.view.redrawKey}
-		{#if children}
-			{@render children()}
+		{#if props.children}
+			{@render props.children()}
 		{/if}
 	{/key}
 </div>

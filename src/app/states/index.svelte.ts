@@ -7,23 +7,25 @@ import type { Block, BlockSplitResult } from '@/block/block.svelte';
 import type { Direction } from '@/types';
 
 import { browser } from '$app/environment';
-import type { BaseRecord, MaybePromise } from '$lib/types';
+import type { MaybePromise } from '$lib/types';
 import { Option, pipe, Array as A } from 'effect';
 import type { Filo } from '@/filo/filo.svelte';
 
 //
 
-export abstract class FiloBaseState<Context extends BaseRecord = BaseRecord> {
+type FiloBaseStateContext = {
+	blocks?: Record<string, Block>;
+	links?: Record<string, Link>;
+};
+
+export abstract class FiloBaseState<Context extends FiloBaseStateContext = FiloBaseStateContext> {
 	constructor(
 		public filo: Filo,
 		public context: Context
 	) {}
 
 	noop() {
-		return new StateCommand({
-			apply: () => this,
-			undo: () => this
-		});
+		return new NoopCommand(this);
 	}
 }
 
@@ -32,6 +34,7 @@ export abstract class FiloBaseState<Context extends BaseRecord = BaseRecord> {
 export class IdleState extends FiloBaseState<Record<string, never>> {
 	focusBlock(block: Block) {
 		return new StateCommand({
+			name: this.focusBlock.name,
 			apply: () =>
 				new FocusState(this.filo, {
 					blocks: {
@@ -65,6 +68,7 @@ export class FocusState extends FiloBaseState<{
 		const filo = this.filo;
 
 		return new StateCommand({
+			name: this.splitBlock.name,
 			apply: async () => {
 				filo.replaceBlock(this.focusedBlock, blocks.in);
 				filo.addBlock(blocks.out);
@@ -107,6 +111,7 @@ export class FocusState extends FiloBaseState<{
 	focusBlock(block: Block) {
 		if (this.focusedBlock == block) return this.noop();
 		return new StateCommand({
+			name: this.focusBlock.name,
 			apply: () =>
 				new FocusState(this.filo, {
 					blocks: {
@@ -119,6 +124,7 @@ export class FocusState extends FiloBaseState<{
 
 	exit() {
 		return new StateCommand({
+			name: this.exit.name,
 			apply: () => new IdleState(this.filo, {}),
 			undo: () => this
 		});
@@ -134,6 +140,7 @@ export class PositioningState extends FiloBaseState<BlockSplitResult> {
 		const newActiveLink = new Link(blocks.in, blocks.out, dimension, sign);
 
 		return new StateCommand({
+			name: this.moveBlockOut.name,
 			apply: () => {
 				filo.removeLink(this.context.links.active);
 				filo.addLink(newActiveLink);
@@ -167,6 +174,7 @@ export class PositioningState extends FiloBaseState<BlockSplitResult> {
 	confirmBlockOut() {
 		const { blocks, links } = this.context;
 		return new StateCommand({
+			name: this.confirmBlockOut.name,
 			apply: () => {
 				if (blocks.queue && links.queue) {
 					return new PositioningState(this.filo, {
@@ -207,6 +215,7 @@ export class PositioningState extends FiloBaseState<BlockSplitResult> {
 		const newActiveLink = new Link(newBlockIn, blocks.out, dimension, sign);
 
 		return new StateCommand({
+			name: this.moveBlockIn.name,
 			apply: () => {
 				filo.removeLink(links.active);
 				filo.addLink(newActiveLink);
@@ -246,6 +255,7 @@ export class StateCommand<
 > {
 	constructor(
 		private data: {
+			name: string;
 			apply: () => MaybePromise<Out>;
 			undo: () => MaybePromise<In>;
 		}
@@ -259,8 +269,25 @@ export class StateCommand<
 		return this.data.undo;
 	}
 
+	get name() {
+		return this.data.name;
+	}
+
 	pipe<T>(fn: (command: this) => T) {
 		return fn(this);
+	}
+}
+
+export class NoopCommand<State extends FiloBaseState = FiloBaseState> extends StateCommand<
+	State,
+	State
+> {
+	constructor(state: State) {
+		super({
+			name: 'noop',
+			apply: () => state,
+			undo: () => state
+		});
 	}
 }
 
