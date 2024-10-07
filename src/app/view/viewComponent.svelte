@@ -23,9 +23,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 	});
 </script>
 
-<div
-	style="width: 100vw; height: 90vh; overflow: scroll; position: relative; background-color: gainsboro;"
->
+<div style="overflow: scroll; position: relative; background-color: gainsboro;">
 	{#key filo.view.redrawKey}
 		{#if children}
 			{@render children()}
