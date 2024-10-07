@@ -25,7 +25,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 </script>
 
 <div
-	class="h-[60vh] w-screen {props.class}"
+	class="h-screen w-screen {props.class}"
 	style="overflow: scroll; position: relative; background-color: gainsboro;"
 >
 	{#key filo.view.redrawKey}

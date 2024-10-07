@@ -54,6 +54,7 @@ export class FiloManager {
 	async run(command: StateCommand) {
 		if (command instanceof NoopCommand) return;
 		const nextState = await command.apply();
+		this.redoStack = [];
 		this.undoStack.push(command);
 		if (this.currentState?.context == nextState.context) return;
 		this.stateHistory.push(nextState);
@@ -63,8 +64,17 @@ export class FiloManager {
 		const lastCommand = this.undoStack.pop();
 		if (!lastCommand) return; // TODO - Improve
 		await lastCommand.undo();
+		this.redoStack.push(lastCommand);
 		const lastState = this.stateHistory.pop();
 		if (!lastState) this.nextState('idle', {});
+	}
+
+	async redo() {
+		const nextCommand = this.redoStack.pop();
+		if (!nextCommand) return;
+		const nextState = await nextCommand.apply();
+		this.undoStack.push(nextCommand);
+		this.stateHistory.push(nextState);
 	}
 
 	//

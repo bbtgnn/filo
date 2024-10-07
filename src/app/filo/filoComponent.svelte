@@ -27,7 +27,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 <FiloControls></FiloControls>
 
-<div id="debug" class="flex h-[400px] divide-x-2 overflow-y-scroll bg-black text-white">
+<!-- <div id="debug" class="flex h-[400px] divide-x-2 overflow-y-scroll bg-black text-white">
 	<div class="grow p-2">
 		<ul>
 			{#each manager.undoStack as cmd}
@@ -74,7 +74,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 			{/each}
 		</ul>
 	</div>
-</div>
+</div> -->
 
 <ViewComponent>
 	<LinkCanvas>

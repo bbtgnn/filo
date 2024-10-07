@@ -109,6 +109,16 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 			})
 		},
 		{
+			key: 'z',
+			modifier: [
+				['ctrl', 'shift'],
+				['meta', 'shift']
+			],
+			callback: preventDefault(() => {
+				manager.redo();
+			})
+		},
+		{
 			key: ' ',
 			callback: preventDefault(() => {})
 		},
