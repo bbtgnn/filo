@@ -45,16 +45,16 @@ export class FiloManager {
 	};
 
 	constructor(public filo: Filo) {
-		const nextState = new IdleState(this.filo, {});
-		this.stateHistory.push(nextState);
+		this.nextState('idle', {});
 	}
 
 	//
 
 	async run(command: StateCommand) {
 		const nextState = await command.apply();
-		this.stateHistory.push(nextState);
 		this.undoStack.push(command);
+		if (this.currentState?.context == nextState.context) return;
+		this.stateHistory.push(nextState);
 	}
 
 	async undo() {
@@ -62,7 +62,7 @@ export class FiloManager {
 		if (!lastCommand) return; // TODO - Improve
 		await lastCommand.undo();
 		const lastState = this.stateHistory.pop();
-		if (!lastState) this.stateHistory.push(new IdleState(this.filo, {}));
+		if (!lastState) this.nextState('idle', {});
 	}
 
 	//

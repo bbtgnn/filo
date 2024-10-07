@@ -8,7 +8,7 @@ import type { Direction } from '@/types';
 
 import { browser } from '$app/environment';
 import type { BaseRecord, MaybePromise } from '$lib/types';
-import { Option, pipe } from 'effect';
+import { Option, pipe, Array as A } from 'effect';
 import type { Filo } from '@/filo/filo.svelte';
 
 //
@@ -59,7 +59,7 @@ export class FocusState extends FiloBaseState<{
 		const selection = window.getSelection();
 		if (!selection) return this.noop();
 		const splitResult = this.focusedBlock.split(selection);
-		if (Option.isNone(splitResult)) this.noop();
+		if (Option.isNone(splitResult)) return this.noop();
 
 		const { blocks, links } = splitResult.pipe(Option.getOrThrow);
 		const filo = this.filo;
@@ -197,7 +197,7 @@ export class PositioningState extends FiloBaseState<BlockSplitResult> {
 		const viewCone = blocks.in.getViewCone(direction);
 		const newBlockIn = pipe(
 			filo.spaceSolver.search(viewCone),
-			// A.filter((b) => this.filo.getBlockState(b) == 'idle'), // TODO - Reimplemtent
+			A.filter((b) => !Object.values(this.context.blocks).includes(b)),
 			(foundBlocks) => blocks.in?.getClosestBlock(foundBlocks)
 		);
 
