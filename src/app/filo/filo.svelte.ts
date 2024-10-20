@@ -38,7 +38,9 @@ export class Filo {
 		if (this.blocks.length == 1) this.setBlockOrigin(block);
 	}
 
-	removeBlock(block: Block) {
+	removeBlock(blockId: string) {
+		const block = this.blocks.find((b) => b.id == blockId);
+		if (!block) return;
 		this.blocks.splice(this.blocks.indexOf(block), 1);
 		this.constraintsSolver.removeBlock(block);
 		this.spaceSolver.removeBlock(block);
@@ -50,7 +52,9 @@ export class Filo {
 		this.constraintsSolver.addLink(link);
 	}
 
-	removeLink(link: Link) {
+	removeLink(linkId: string) {
+		const link = this.links.find((l) => l.id == linkId);
+		if (!link) return;
 		this.links.splice(this.links.indexOf(link), 1);
 		this.constraintsSolver.removeLink(link);
 	}
@@ -69,10 +73,10 @@ export class Filo {
 			}
 		});
 
-		for (const link of linksToRemove) this.removeLink(link);
+		for (const link of linksToRemove) this.removeLink(link.id);
 		for (const link of newLinks) this.addLink(link);
 
-		this.removeBlock(oldBlock);
+		this.removeBlock(oldBlock.id);
 		this.addBlock(newBlock);
 		this.constraintsSolver.updateVariables();
 		if (oldBlock == this.origin?.block) this.setBlockOrigin(newBlock);

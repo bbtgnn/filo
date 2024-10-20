@@ -7,7 +7,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 <script lang="ts">
 	import { config } from '@/config';
 	import { untrack } from 'svelte';
-	import { getFiloManager } from '@/fsm/filoManager.svelte';
+	import { getFiloManager } from '@/manager/index.svelte';
 	import type { Block } from './block.svelte';
 	// import { clickOutside } from '$lib/utils';
 
@@ -42,8 +42,14 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 	}
 
 	function handleClick(_: MouseEvent) {
-		manager.state('idle')?.focusBlock(block);
-		manager.state('focus')?.focusBlock(block);
+		manager
+			.state('idle')
+			?.focusBlock(block)
+			.pipe((c) => manager.run(c));
+		manager
+			.state('focus')
+			?.focusBlock(block)
+			.pipe((c) => manager.run(c));
 	}
 
 	const state = $derived(manager.getBlockState(block));

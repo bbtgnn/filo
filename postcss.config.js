@@ -2,6 +2,9 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-export type BaseRecord = Record<string, unknown>;
-
-export type MaybePromise<T> = T | Promise<T>;
+export default {
+	plugins: {
+		tailwindcss: {},
+		autoprefixer: {}
+	}
+};

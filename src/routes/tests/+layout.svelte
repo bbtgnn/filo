@@ -14,6 +14,5 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 	div {
 		padding: 20px;
 		background-color: antiquewhite;
-		margin-bottom: 20px;
 	}
 </style>

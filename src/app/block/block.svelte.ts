@@ -13,15 +13,10 @@ import { RecordId } from 'surrealdb';
 
 //
 
-export class Block implements RBush.BBox {
+export class Block {
 	id: string;
 	text: string;
-	variables: Record<Dimension | Size, kiwi.Variable> = {
-		x: new kiwi.Variable(),
-		y: new kiwi.Variable(),
-		height: new kiwi.Variable(),
-		width: new kiwi.Variable()
-	};
+	variables: Record<Dimension | Size, kiwi.Variable>;
 
 	element = $state<HTMLElement | undefined>(undefined);
 	height = $derived.by(() => this.element?.clientHeight ?? config.block.baseHeight);
@@ -30,16 +25,29 @@ export class Block implements RBush.BBox {
 	/* */
 
 	constructor(id: string, text: string) {
-		this.text = text;
 		this.id = id;
+		this.text = text;
+		this.variables = {
+			x: new kiwi.Variable(this.id + '_x'),
+			y: new kiwi.Variable(this.id + '_y'),
+			width: new kiwi.Variable(this.id + '_w'),
+			height: new kiwi.Variable(this.id + '_h')
+		};
 	}
 
 	/* Geometry */
 
+	get x() {
+		return this.variables.x.value();
+	}
+	get y() {
+		return this.variables.y.value();
+	}
+
 	get position(): Point {
 		return {
-			x: this.variables.x.value(),
-			y: this.variables.y.value()
+			x: this.x,
+			y: this.y
 		};
 	}
 
@@ -47,8 +55,8 @@ export class Block implements RBush.BBox {
 		const offsetX = config.viewport.width / 2;
 		const offsetY = config.viewport.height / 2;
 		return {
-			x: this.variables.x.value() + offsetX,
-			y: this.variables.y.value() + offsetY
+			x: this.x + offsetX,
+			y: this.y + offsetY
 		};
 	}
 
@@ -56,27 +64,6 @@ export class Block implements RBush.BBox {
 		return {
 			width: this.width,
 			height: this.height
-		};
-	}
-
-	// RBush.BBox implementation
-
-	get minX() {
-		return this.variables.x.value();
-	}
-	get minY() {
-		return this.variables.y.value();
-	}
-	get maxX() {
-		return this.minX + this.width;
-	}
-	get maxY() {
-		return this.minY + this.height;
-	}
-	get center(): Point {
-		return {
-			x: (this.maxX + this.minX) / 2,
-			y: (this.maxY + this.minY) / 2
 		};
 	}
 
@@ -228,7 +215,7 @@ export class Block implements RBush.BBox {
 
 	getClosestBlock(blocks: Block[]): Block | undefined {
 		return blocks
-			.map((block) => ({ block, distance: euclideanDistance(this.center, block.center) }))
+			.map((block) => ({ block, distance: euclideanDistance(this.position, block.position) }))
 			.sort((a, b) => a.distance - b.distance)
 			.at(0)?.block;
 	}

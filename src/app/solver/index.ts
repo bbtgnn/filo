@@ -44,12 +44,37 @@ export class ConstraintSolver extends kiwi.Solver {
 }
 
 export class SpaceSolver extends RBush<Block> {
+	/* Data format adapting */
+
+	toBBox(block: Block): RBush.BBox {
+		const minX = block.x;
+		const minY = block.y;
+		const maxX = minX + block.variables.width.value();
+		const maxY = minY + block.variables.height.value();
+		return {
+			minX,
+			minY,
+			maxX,
+			maxY
+		};
+	}
+
+	compareMinX(a: Block, b: Block): number {
+		return a.x - b.x;
+	}
+
+	compareMinY(a: Block, b: Block): number {
+		return a.y - b.y;
+	}
+
+	/* Operations */
+
 	addBlock(block: Block) {
 		if (!this.isBlockInTree(block)) this.insert(block);
 	}
 
 	removeBlock(block: Block) {
-		if (this.isBlockInTree(block)) this.remove(block);
+		if (this.isBlockInTree(block)) this.remove(block, (a, b) => a.id == b.id);
 	}
 
 	updateBlock(block: Block) {

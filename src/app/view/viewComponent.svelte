@@ -5,14 +5,15 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 
 <script lang="ts">
-	import { getFiloManager } from '@/fsm/filoManager.svelte';
+	import { getFiloManager } from '@/manager/index.svelte';
 	import { untrack, type Snippet } from 'svelte';
 
 	type Props = {
 		children?: Snippet;
+		class?: string;
 	};
 
-	const { children }: Props = $props();
+	const props: Props = $props();
 
 	const manager = getFiloManager();
 	const filo = manager.filo;
@@ -24,11 +25,12 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 </script>
 
 <div
-	style="width: 100vw; height: 90vh; overflow: scroll; position: relative; background-color: gainsboro;"
+	class="h-screen w-screen {props.class}"
+	style="overflow: scroll; position: relative; background-color: gainsboro;"
 >
 	{#key filo.view.redrawKey}
-		{#if children}
-			{@render children()}
+		{#if props.children}
+			{@render props.children()}
 		{/if}
 	{/key}
 </div>
