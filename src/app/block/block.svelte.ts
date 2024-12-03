@@ -3,10 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import * as kiwi from '@lume/kiwi';
-import { Option, Record, String, Tuple } from 'effect';
+import { Option, Record, String } from 'effect';
 import type { Dimension, Direction, Point, Rectangle, Size } from '@/types';
 import { config } from '@/config';
-import { Link } from '@/link/link.svelte';
 import RBush from 'rbush';
 import { euclideanDistance } from '@/solver';
 import { RecordId } from 'surrealdb';
@@ -84,91 +83,40 @@ export class Block {
 		};
 	}
 
-	// TODO - cleanup
+	/**
+	 * // TODO - Rework
+	 * Imo, a good UX is:
+	 * the text INSIDE the selection is the one that becomes BlockOut
+	 * Currently is not like this
+	 */
 	split(selection: Selection): Option.Option<BlockSplitResult> {
 		if (selection.isCollapsed) {
 			const cursorIndex = selection.anchorOffset;
-			if (cursorIndex === 0 || cursorIndex == this.text.length - 1) {
-				return Option.none();
-			} else {
-				return this.splitAtIndex(cursorIndex).pipe(
-					Option.map(([firstBlock, secondBlock]) => ({
-						blocks: {
-							in: firstBlock,
-							out: secondBlock
-						},
-						links: {
-							active: new Link(firstBlock, secondBlock, 'y', 1) // TODO - Get from preferences}
-						}
-					}))
-				);
-			}
+			if (cursorIndex === 0 || cursorIndex == this.text.length - 1) return Option.none();
+
+			return Option.some({
+				in: new Block(this.id + 0, this.text.slice(0, cursorIndex)),
+				out: new Block(this.id + 1, this.text.slice(cursorIndex))
+			});
 		} else {
 			const [selectionStart, selectionEnd] = [selection.anchorOffset, selection.focusOffset].sort();
-			if (selectionStart === 0) {
-				return this.splitAtIndex(selectionEnd).pipe(
-					Option.map(([firstBlock, secondBlock]) => ({
-						blocks: {
-							in: secondBlock,
-							out: firstBlock
-						},
-						links: {
-							active: new Link(secondBlock, firstBlock, 'y', 1) // TODO - Get from preferences
-						}
-					}))
-				);
-			} else if (selectionEnd == this.text.length - 1) {
-				return this.splitAtIndex(selectionStart).pipe(
-					Option.map(([firstBlock, secondBlock]) => ({
-						blocks: {
-							in: firstBlock,
-							out: secondBlock
-						},
-						links: {
-							active: new Link(firstBlock, secondBlock, 'y', 1) // TODO - Get from preferences
-						}
-					}))
-				);
-			} else {
-				const chunks = [
-					this.text.slice(0, selectionStart),
-					this.text.slice(selectionStart, selectionEnd),
-					this.text.slice(selectionEnd)
-				]
-					.filter(String.isNonEmpty)
-					.map((text, index) => new Block(this.id + index.toString(), text));
 
-				const blockIn = chunks[0];
-				const blockOut = chunks[1];
-				const blockQueue: Block | undefined = chunks[2];
+			const chunks = [
+				this.text.slice(0, selectionStart),
+				this.text.slice(selectionStart, selectionEnd),
+				this.text.slice(selectionEnd)
+			].filter(String.isNonEmpty);
 
-				return Option.some({
-					blocks: {
-						in: blockIn,
-						out: blockOut,
-						queue: blockQueue
-					},
-					links: {
-						active: new Link(blockIn, blockOut, 'y', 1), // TODO - Get from preferences
-						queue: blockQueue ? new Link(blockOut, blockQueue, 'y', 1) : undefined
-					}
-				});
-			}
+			if (chunks.length < 2) return Option.none();
+
+			const blocks = chunks.map((text, index) => new Block(this.id + index, text));
+
+			return Option.some({
+				in: blocks[0],
+				out: blocks[1],
+				queue: blocks[2]
+			});
 		}
-	}
-
-	splitAtIndex(index: number): Option.Option<[Block, Block]> {
-		if (index <= 0) return Option.none();
-		const chunks = [this.text.slice(0, index), this.text.slice(index)] as const;
-		return Option.some(
-			Tuple.make(
-				new Block(
-					this.id + '0', // TODO - refine, mabye some method
-					chunks[0]
-				),
-				new Block(this.id + '1', chunks[1])
-			)
-		);
 	}
 
 	scrollIntoView() {
@@ -221,10 +169,7 @@ export class Block {
 	}
 }
 
-export type BlockSplitResult = {
-	blocks: { in: Block; out: Block; queue?: Block };
-	links: { active: Link; queue?: Link };
-};
+export type BlockSplitResult = { in: Block; out: Block; queue?: Block };
 
 export type SerializedBlock = {
 	text: string;
