@@ -64,8 +64,19 @@ export class FocusState extends FiloBaseState<{
 		const splitResult = this.focusedBlock.split(selection);
 		if (Option.isNone(splitResult)) return this.noop();
 
-		const { blocks, links } = splitResult.pipe(Option.getOrThrow);
+		const blocks = splitResult.pipe(Option.getOrThrow);
 		const filo = this.filo;
+
+		const activeLink = new Link(blocks.in, blocks.out, 'y', 1);
+		let queueLink: Link | undefined = undefined;
+		if (blocks.queue) {
+			queueLink = new Link(blocks.out, blocks.queue, 'y', 1);
+		}
+
+		const links = {
+			active: activeLink,
+			queue: queueLink
+		};
 
 		return new StateCommand({
 			name: this.splitBlock.name,
@@ -76,8 +87,8 @@ export class FocusState extends FiloBaseState<{
 
 				await filo.view.waitForUpdate(); // Loads blocks and their height, needed for computing variables
 
-				filo.addLink(links.active);
-				if (links.queue) filo.addLink(links.queue);
+				filo.addLink(activeLink);
+				if (queueLink) filo.addLink(queueLink);
 
 				filo.constraintsSolver.updateVariables();
 				filo.view.redraw();
@@ -133,7 +144,10 @@ export class FocusState extends FiloBaseState<{
 
 //
 
-export class PositioningState extends FiloBaseState<BlockSplitResult> {
+export class PositioningState extends FiloBaseState<{
+	blocks: BlockSplitResult;
+	links: { active: Link; queue?: Link };
+}> {
 	moveBlockOut({ dimension, sign }: Direction) {
 		const filo = this.filo;
 		const { blocks, links } = this.context;
