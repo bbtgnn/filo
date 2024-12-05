@@ -2,64 +2,81 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { RecordId } from 'surrealdb';
+// import { RecordId } from 'surrealdb';
 import * as kiwi from '@lume/kiwi';
-import { type Dimension } from '@/types';
+import { type Dimension, type Direction } from '@/types';
 import { config } from '@/config';
 import type { Block } from '@/block/block.svelte';
-import { dimensionToSize, getPerpendicularDimension } from '@/utils';
+import { dimensionToSize, getPerpendicularDimension, NotImplementedError } from '@/utils';
 
 //
 
 export type Sign = -1 | 1;
 
+export type LinkAnchor = {
+	block: Block;
+	side: Direction;
+	order: number;
+};
+
 //
 
 export class Link {
 	id: string;
-	in: Block;
-	out: Block;
-	dimension: Dimension;
-	sign: Sign;
+	in: LinkAnchor;
+	out: LinkAnchor;
 	constraints: {
 		main: kiwi.Constraint;
 		secondary: kiwi.Constraint;
 	};
 
-	constructor(blockIn: Block, blockOut: Block, dimension: Dimension, sign: Sign) {
-		this.in = blockIn;
-		this.out = blockOut;
-		this.dimension = dimension;
-		this.sign = sign;
+	constructor(anchorIn: LinkAnchor, anchorOut: LinkAnchor) {
+		this.in = anchorIn;
+		this.out = anchorOut;
 		this.constraints = this.getConstraints();
-		this.id = `${blockIn.id}->${blockOut.id}`;
+		this.id = `${anchorIn.block.id}->${anchorOut.block.id}`;
+	}
+
+	get dimension(): Dimension {
+		if (this.in.side.dimension == this.out.side.dimension) return this.in.side.dimension;
+		else throw new NotImplementedError();
+	}
+
+	get sign(): Sign {
+		if (this.in.side.sign == -1 * this.out.side.sign) return this.in.side.sign;
+		else throw new NotImplementedError();
 	}
 
 	/* DB */
 
-	static get dbName() {
-		return 'link' as const;
-	}
+	// static get dbName() {
+	// 	return 'link' as const;
+	// }
 
-	get recordId(): RecordId {
-		return new RecordId(Link.dbName, this.id);
-	}
+	// get recordId(): RecordId {
+	// 	return new RecordId(Link.dbName, this.id);
+	// }
 
-	serialize(): SerializedLink {
-		return {
-			in: this.in.recordId.toString(),
-			out: this.out.recordId.toString(),
-			sign: this.sign,
-			dimension: this.dimension
-		};
-	}
+	// serialize(): SerializedLink {
+	// 	return {
+	// 		in: this.in.recordId.toString(),
+	// 		out: this.out.recordId.toString(),
+	// 		sign: this.sign,
+	// 		dimension: this.dimension
+	// 	};
+	// }
 
 	/* Business logic */
 
 	getConstraints() {
 		const perpendicularDimension = getPerpendicularDimension(this.dimension);
-		const mainBlock = this.sign == 1 ? this.in : this.out;
-		const secondaryBlock = this.sign == 1 ? this.out : this.in;
+
+		const mainAnchor = this.sign == 1 ? this.in : this.out;
+		const mainBlock = mainAnchor.block;
+
+		const secondaryAnchor = this.sign == 1 ? this.out : this.in;
+		const secondaryBlock = secondaryAnchor.block;
+
 		const involvedSize = dimensionToSize(this.dimension);
 
 		return {

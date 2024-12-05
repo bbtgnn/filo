@@ -12,3 +12,5 @@ export function dimensionToSize(dimension: Dimension): Size {
 	if (dimension == 'x') return 'width';
 	else return 'height';
 }
+
+export class NotImplementedError extends Error {}

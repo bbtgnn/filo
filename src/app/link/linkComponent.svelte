@@ -13,8 +13,8 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 	};
 
 	let { link }: Props = $props();
-	let { x: x1, y: y1 } = $derived(link.in.absolutePosition);
-	let { x: x2, y: y2 } = $derived(link.out.absolutePosition);
+	let { x: x1, y: y1 } = $derived(link.in.block.absolutePosition);
+	let { x: x2, y: y2 } = $derived(link.out.block.absolutePosition);
 	const { padding: p } = config.block;
 </script>
 

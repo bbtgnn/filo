@@ -4,7 +4,7 @@
 
 import { Link } from '@/link/link.svelte';
 import type { Block, BlockSplitResult } from '@/block/block.svelte';
-import type { Direction } from '@/types';
+import type { Direction, Sign } from '@/types';
 
 import { browser } from '$app/environment';
 import type { MaybePromise } from '$lib/types';
@@ -67,10 +67,17 @@ export class FocusState extends FiloBaseState<{
 		const blocks = splitResult.pipe(Option.getOrThrow);
 		const filo = this.filo;
 
-		const activeLink = new Link(blocks.in, blocks.out, 'y', 1);
+		const activeLink = new Link(
+			{ block: blocks.in, side: { dimension: 'y', sign: 1 }, order: 1 },
+			{ block: blocks.out, side: { dimension: 'y', sign: -1 }, order: 1 }
+		);
+
 		let queueLink: Link | undefined = undefined;
 		if (blocks.queue) {
-			queueLink = new Link(blocks.out, blocks.queue, 'y', 1);
+			queueLink = new Link(
+				{ block: blocks.out, side: { dimension: 'y', sign: 1 }, order: 1 },
+				{ block: blocks.queue, side: { dimension: 'y', sign: -1 }, order: 1 }
+			);
 		}
 
 		const links = {
@@ -151,7 +158,10 @@ export class PositioningState extends FiloBaseState<{
 	moveBlockOut({ dimension, sign }: Direction) {
 		const filo = this.filo;
 		const { blocks, links } = this.context;
-		const newActiveLink = new Link(blocks.in, blocks.out, dimension, sign);
+		const newActiveLink = new Link(
+			{ block: blocks.in, side: { dimension, sign }, order: 1 },
+			{ block: blocks.out, side: { dimension, sign: (sign * -1) as Sign }, order: 1 }
+		);
 
 		return new StateCommand({
 			name: this.moveBlockOut.name,
@@ -226,7 +236,11 @@ export class PositioningState extends FiloBaseState<{
 		if (!newBlockIn) return this.noop();
 
 		const { sign, dimension } = links.active;
-		const newActiveLink = new Link(newBlockIn, blocks.out, dimension, sign);
+
+		const newActiveLink = new Link(
+			{ block: newBlockIn, side: { dimension, sign }, order: 1 },
+			{ block: blocks.out, side: { dimension, sign: (sign * -1) as Sign }, order: 1 }
+		);
 
 		return new StateCommand({
 			name: this.moveBlockIn.name,

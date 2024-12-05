@@ -4,7 +4,7 @@
 
 import type Surreal from 'surrealdb';
 import { Block, type SerializedBlock } from '@/block/block.svelte';
-import type { Link, SerializedLink } from '@/link/link.svelte';
+// import type { Link, SerializedLink } from '@/link/link.svelte';
 
 export class Storage {
 	constructor(public db: Surreal) {}
@@ -25,17 +25,17 @@ export class Storage {
 
 	//
 
-	saveLink(link: Link) {
-		return this.db.create<SerializedLink>(link.recordId, link.serialize());
-	}
+	// saveLink(link: Link) {
+	// 	return this.db.create<SerializedLink>(link.recordId, link.serialize());
+	// }
 
-	updateLink(link: Link) {
-		return this.db.update<SerializedLink>(link.recordId, link.serialize());
-	}
+	// updateLink(link: Link) {
+	// 	return this.db.update<SerializedLink>(link.recordId, link.serialize());
+	// }
 
-	deleteLink(link: Link) {
-		return this.db.delete<SerializedLink>(link.recordId);
-	}
+	// deleteLink(link: Link) {
+	// 	return this.db.delete<SerializedLink>(link.recordId);
+	// }
 
 	//
 
