@@ -6,9 +6,11 @@ import { Block } from '@/block/block.svelte';
 import { Link } from '@/link/link.svelte';
 import { ConstraintSolver, SpaceSolver } from '@/solver';
 import * as kiwi from '@lume/kiwi';
-import type { Rectangle } from '@/types';
+import type { Direction, Rectangle } from '@/types';
 import { nanoid } from 'nanoid';
 import { View } from '@/view/view.svelte';
+import { Option } from 'effect';
+import _ from 'lodash';
 
 //
 
@@ -103,5 +105,19 @@ export class Filo {
 	removeBlockOrigin() {
 		this.origin?.constraints.forEach((c) => this.constraintsSolver.removeConstraint(c));
 		this.origin = undefined;
+	}
+
+	getBlockLinksBySide(block: Block, side: Direction): Link[] {
+		return this.links.filter(
+			(l) =>
+				(_.isEqual(l.in.side, side) && l.in.block.id == block.id) ||
+				(_.isEqual(l.out.side, side) && l.out.block.id == block.id)
+		);
+	}
+
+	getLinkByBlocks(blockIn: Block, blockOut: Block): Option.Option<Link> {
+		return Option.fromNullable(
+			this.links.find((l) => l.in.block.id === blockIn.id && l.out.block.id === blockOut.id)
+		);
 	}
 }

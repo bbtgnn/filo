@@ -6,16 +6,49 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 <script lang="ts">
 	import { config } from '@/config';
-	import type { Link } from './link.svelte';
+	import type { Link, LinkAnchor } from './link.svelte';
+	import { getFiloManager } from '@/manager/index.svelte';
+	import type { Point } from '@/types';
+	import type { Filo } from '@/filo/filo.svelte';
+	import { dimensionToSize, getPerpendicularDimension } from '@/utils';
 
 	type Props = {
 		link: Link;
 	};
 
-	let { link }: Props = $props();
-	let { x: x1, y: y1 } = $derived(link.in.block.absolutePosition);
-	let { x: x2, y: y2 } = $derived(link.out.block.absolutePosition);
-	const { padding: p } = config.block;
+	const { filo } = getFiloManager();
+
+	const { link }: Props = $props();
+	const { in: anchorIn, out: anchorOut } = $derived(link);
+
+	const pointIn = $derived(linkAnchorToPoint(filo, anchorIn));
+	const pointOut = $derived(linkAnchorToPoint(filo, anchorOut));
+
+	function linkAnchorToPoint(filo: Filo, anchor: LinkAnchor): Point {
+		const { block, side, order = 0 } = anchor;
+		const { dimension: mainDimension, sign } = side;
+		const perpendicularDimension = getPerpendicularDimension(mainDimension);
+
+		const totalAnchors = filo.getBlockLinksBySide(anchor.block, anchor.side).length;
+		const anchorsDistance = block[dimensionToSize(perpendicularDimension)] / (totalAnchors + 1);
+
+		const mainDimensionIncrease = sign == 1 ? block[dimensionToSize(mainDimension)] : 0;
+		const secondaryDimensionIncrease = anchorsDistance * (order + 1);
+
+		return {
+			[mainDimension]: block.absolutePosition[mainDimension] + mainDimensionIncrease,
+			[perpendicularDimension]:
+				block.absolutePosition[perpendicularDimension] + secondaryDimensionIncrease
+		} as Point;
+	}
 </script>
 
-<line x1={x1 + p} y1={y1 + p} x2={x2 + p} y2={y2 + p} stroke="black" />
+<line x1={pointIn.x} y1={pointIn.y} x2={pointOut.x} y2={pointOut.y} stroke="black" />
+
+<!-- <line
+	x1={anchorIn.block.absolutePosition.x}
+	y1={anchorIn.block.absolutePosition.y}
+	x2={anchorOut.block.absolutePosition.x}
+	y2={anchorOut.block.absolutePosition.y}
+	stroke="black"
+/> -->

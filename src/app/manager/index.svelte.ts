@@ -11,7 +11,7 @@ import {
 	NoopCommand,
 	PositioningState,
 	type StateCommand
-} from '@/states/index.svelte';
+} from '@/states/index';
 
 import { getContext, setContext } from 'svelte';
 

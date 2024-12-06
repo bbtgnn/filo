@@ -66,6 +66,13 @@ export class Block {
 		};
 	}
 
+	get center(): Point {
+		return {
+			x: this.absolutePosition.x + this.width / 2,
+			y: this.absolutePosition.y + this.height / 2
+		};
+	}
+
 	/* Db */
 
 	static get dbName() {
