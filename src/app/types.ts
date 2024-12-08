@@ -14,3 +14,8 @@ export type Direction = {
 	dimension: Dimension;
 	sign: Sign;
 };
+
+export enum Side {
+	Origin = 0,
+	Opposite = 1
+}
