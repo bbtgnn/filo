@@ -34,6 +34,16 @@ export class Block {
 		};
 	}
 
+	get exp() {
+		return {
+			center: {
+				x: this.variables.x.plus(this.variables.width.divide(2)),
+				y: this.variables.y.plus(this.variables.height.divide(2))
+			}
+			// TODO - Add more if necessary
+		};
+	}
+
 	/* Geometry */
 
 	get x() {

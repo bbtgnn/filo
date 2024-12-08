@@ -6,6 +6,7 @@ import { browser } from '$app/environment';
 import { Option } from 'effect';
 import { PositioningState } from './positioningState.svelte';
 import { FiloBaseState, IdleState, StateCommand } from './index.svelte';
+import { getPerpendicularDimension } from '@/utils';
 
 //
 
@@ -38,7 +39,17 @@ export class FocusState extends FiloBaseState<{
 				await filo.view.waitForUpdate(); // Loads blocks and their height, needed for computing variables
 
 				const sideIn: Direction = { dimension: 'y', sign: 1 };
-				const orderIn = filo.getBlockLinksBySide(blocks.in, sideIn).length;
+
+				const linksOnSide = filo.getBlockLinksBySide(blocks.in, sideIn);
+				const lastLinkOnSide = linksOnSide.at(-1);
+				if (lastLinkOnSide)
+					filo.addOrderConstraint(
+						lastLinkOnSide.out.block,
+						blocks.out,
+						getPerpendicularDimension(sideIn.dimension)
+					);
+
+				const orderIn = linksOnSide.length;
 
 				const activeLink = new Link(
 					{ block: blocks.in, side: sideIn, order: orderIn },

@@ -14,3 +14,5 @@ export function dimensionToSize(dimension: Dimension): Size {
 }
 
 export class NotImplementedError extends Error {}
+
+export class UnexpectedError extends Error {}

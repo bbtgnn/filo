@@ -2,9 +2,10 @@ import { Link } from '@/link/link.svelte';
 import type { BlockSplitResult } from '@/block/block.svelte';
 import type { Direction, Sign } from '@/types';
 
-import { pipe, Array as A } from 'effect';
+import { pipe, Array as A, Option } from 'effect';
 import { FiloBaseState, StateCommand } from './index.svelte';
 import { FocusState } from './focusState.svelte';
+import { getPerpendicularDimension, UnexpectedError } from '@/utils';
 
 //
 
@@ -15,14 +16,23 @@ export class PositioningState extends FiloBaseState<{
 	moveBlockOut({ dimension, sign }: Direction) {
 		const filo = this.filo;
 		const { blocks, links } = this.context;
-		const newActiveLink = new Link(
-			{ block: blocks.in, side: { dimension, sign }, order: 0 },
-			{ block: blocks.out, side: { dimension, sign: (sign * -1) as Sign }, order: 0 }
-		);
 
 		return new StateCommand({
 			name: this.moveBlockOut.name,
 			apply: () => {
+				const newActiveLink = new Link(
+					{ block: blocks.in, side: { dimension, sign }, order: 0 },
+					{ block: blocks.out, side: { dimension, sign: (sign * -1) as Sign }, order: 0 }
+				);
+
+				const blocksOnSide = filo.getBlocksOnSide(blocks.in, { dimension, sign });
+				if (blocksOnSide.length >= 1)
+					filo.addOrderConstraint(
+						blocksOnSide.at(-1)!,
+						blocks.out,
+						getPerpendicularDimension(dimension)
+					);
+
 				filo.removeLink(this.context.links.active.id);
 				filo.addLink(newActiveLink);
 
@@ -38,7 +48,10 @@ export class PositioningState extends FiloBaseState<{
 				});
 			},
 			undo: () => {
-				filo.removeLink(newActiveLink.id);
+				const activeLink = filo.getLinkByBlocks(blocks.in, blocks.out);
+				if (Option.isNone(activeLink)) throw new UnexpectedError();
+
+				filo.removeLink(activeLink.value.id);
 				filo.addLink(this.context.links.active);
 
 				filo.constraintsSolver.updateVariables();

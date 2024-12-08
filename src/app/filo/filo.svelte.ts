@@ -6,11 +6,12 @@ import { Block } from '@/block/block.svelte';
 import { Link } from '@/link/link.svelte';
 import { ConstraintSolver, SpaceSolver } from '@/solver';
 import * as kiwi from '@lume/kiwi';
-import type { Direction, Rectangle } from '@/types';
+import type { Dimension, Direction, Rectangle } from '@/types';
 import { nanoid } from 'nanoid';
 import { View } from '@/view/view.svelte';
 import { Option } from 'effect';
 import _ from 'lodash';
+import { dimensionToSize, getPerpendicularDimension, UnexpectedError } from '@/utils';
 
 //
 
@@ -23,6 +24,10 @@ export class Filo {
 
 	blocks = $state<Block[]>([]);
 	links = $state<Link[]>([]);
+
+	orderConstraints = $state<OrderConstraint[]>([]);
+	alignConstraints = $state<AlignConstraint[]>([]);
+
 	origin = $state<{ block: Block; constraints: kiwi.Constraint[] } | undefined>(undefined);
 
 	//
@@ -115,9 +120,119 @@ export class Filo {
 		);
 	}
 
+	getBlocksOnSide(block: Block, side: Direction): Block[] {
+		return this.getBlockLinksBySide(block, side)
+			.map((l) => [l.in.block, l.out.block])
+			.flat()
+			.filter((b) => b.id != block.id);
+	}
+
 	getLinkByBlocks(blockIn: Block, blockOut: Block): Option.Option<Link> {
 		return Option.fromNullable(
 			this.links.find((l) => l.in.block.id === blockIn.id && l.out.block.id === blockOut.id)
 		);
 	}
+
+	//
+
+	addOrderConstraint(blockIn: Block, blockOut: Block, dimension: Dimension) {
+		const constraint = new OrderConstraint(blockIn, blockOut, dimension);
+		this.orderConstraints.push(constraint);
+		this.constraintsSolver.addConstraint(constraint.self);
+	}
+
+	removeOrderConstraint(blockIn: Block, blockOut: Block) {
+		const constraint = this.orderConstraints.find(
+			(c) => c.in.id === blockIn.id && c.out.id === blockOut.id
+		);
+		if (constraint) this.constraintsSolver.removeConstraint(constraint.self);
+	}
 }
+
+//
+
+export class OrderConstraint {
+	in: Block;
+	out: Block;
+	self: kiwi.Constraint;
+
+	constructor(blockIn: Block, blockOut: Block, dimension: Dimension) {
+		this.in = blockIn;
+		this.out = blockOut;
+		this.self = new kiwi.Constraint(
+			this.in.variables[dimension].plus(this.in.variables[dimensionToSize(dimension)]),
+			kiwi.Operator.Le,
+			this.out.variables[dimension]
+		);
+	}
+}
+
+//
+
+type AlignSide = 'origin' | 'opposite' | 'center';
+
+type AlignAnchor = Block | AlignSide;
+
+export class AlignConstraint {
+	self: kiwi.Constraint;
+
+	// TODO - ENSURE THAT ALL BLOCKS ARE ALL ON THE SAME SIDE OF BLOCKIN (maybe)
+	// TODO - IS IT POSSIBLE TO DERIVE DIMENSION FROM BLOCKSOUT (maybe)
+	constructor(
+		public readonly blockIn: Block,
+		public readonly blocksOut: Block[],
+		public readonly dimension: Dimension,
+		public readonly anchor: AlignAnchor
+	) {
+		const STR = kiwi.Strength.strong;
+		const mainDimension = getPerpendicularDimension(dimension);
+
+		if (this.anchor === 'center') {
+			// TODO - Find a better implementation (this works only with fixed width blocks)
+			if (isEven(this.blocksOut.length)) {
+				const target = this.blocksOut[this.blocksOut.length / 2 + 1];
+				this.self = new kiwi.Constraint(
+					this.blockIn.variables[mainDimension],
+					kiwi.Operator.Eq,
+					target.variables[mainDimension],
+					STR
+				);
+			} else {
+				// TODO - Find a better implementation (this works only with fixed width blocks)
+				const t1 = this.blocksOut[this.blocksOut.length / 2 - 1];
+				const t2 = this.blocksOut[this.blocksOut.length / 2];
+				this.self = new kiwi.Constraint(
+					this.blockIn.exp.center[mainDimension],
+					kiwi.Operator.Eq,
+					t1.exp.center[mainDimension].plus(t2.exp.center[mainDimension]).divide(2)
+				);
+			}
+		} else {
+			let target: Block | undefined = undefined;
+			if (this.anchor instanceof Block) {
+				target = this.anchor;
+			} else if (this.anchor == 'origin') {
+				target = this.blocksOut.at(0)!;
+			} else if (this.anchor === 'opposite') {
+				target = this.blocksOut.at(-1);
+			}
+
+			if (!target) throw new UnexpectedError();
+
+			this.self = new kiwi.Constraint(
+				this.blockIn.variables[mainDimension],
+				kiwi.Operator.Eq,
+				target.variables[mainDimension],
+				STR
+			);
+		}
+	}
+}
+
+function isEven(n: number): boolean {
+	return n % 2 === 1;
+}
+
+// function isOdd(n: number): boolean {
+// 	return n % 2 === 0;
+// }
