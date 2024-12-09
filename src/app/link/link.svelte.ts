@@ -7,7 +7,7 @@ import * as kiwi from '@lume/kiwi';
 import { type Dimension, type Direction } from '@/types';
 import { config } from '@/config';
 import type { Block } from '@/block/block.svelte';
-import { dimensionToSize, getPerpendicularDimension, NotImplementedError } from '@/utils';
+import { dimensionToSize, NotImplementedError } from '@/utils';
 
 //
 
@@ -25,15 +25,12 @@ export class Link {
 	id: string;
 	in: LinkAnchor;
 	out: LinkAnchor;
-	constraints: {
-		main: kiwi.Constraint;
-		secondary: kiwi.Constraint;
-	};
+	constraint: kiwi.Constraint;
 
 	constructor(anchorIn: LinkAnchor, anchorOut: LinkAnchor) {
 		this.in = anchorIn;
 		this.out = anchorOut;
-		this.constraints = this.getConstraints();
+		this.constraint = this.getConstraint();
 		this.id = `${anchorIn.block.id}->${anchorOut.block.id}`;
 	}
 
@@ -68,9 +65,7 @@ export class Link {
 
 	/* Business logic */
 
-	getConstraints() {
-		const perpendicularDimension = getPerpendicularDimension(this.dimension);
-
+	getConstraint() {
 		const mainAnchor = this.sign == 1 ? this.in : this.out;
 		const mainBlock = mainAnchor.block;
 
@@ -79,22 +74,14 @@ export class Link {
 
 		const involvedSize = dimensionToSize(this.dimension);
 
-		return {
-			main: new kiwi.Constraint(
-				mainBlock.variables[this.dimension]
-					.plus(mainBlock.variables[involvedSize])
-					.plus(config.viewport.defaultGap),
-				kiwi.Operator.Le,
-				secondaryBlock.variables[this.dimension],
-				kiwi.Strength.required
-			),
-			secondary: new kiwi.Constraint(
-				mainBlock.variables[perpendicularDimension],
-				kiwi.Operator.Eq,
-				secondaryBlock.variables[perpendicularDimension],
-				kiwi.Strength.weak
-			)
-		};
+		return new kiwi.Constraint(
+			mainBlock.variables[this.dimension]
+				.plus(mainBlock.variables[involvedSize])
+				.plus(config.viewport.defaultGap),
+			kiwi.Operator.Le,
+			secondaryBlock.variables[this.dimension],
+			kiwi.Strength.required
+		);
 	}
 }
 

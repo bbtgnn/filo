@@ -12,6 +12,7 @@ import { View } from '@/view/view.svelte';
 import { Option } from 'effect';
 import _ from 'lodash';
 import { dimensionToSize, getPerpendicularDimension, UnexpectedError } from '@/utils';
+import { config } from '@/config';
 
 //
 
@@ -81,9 +82,25 @@ export class Filo {
 				return new Link(oldLink.in, { ...oldLink.out, block: newBlock });
 			}
 		});
-
 		for (const link of linksToRemove) this.removeLink(link.id);
 		for (const link of newLinks) this.addLink(link);
+
+		//
+
+		const constraintsToRemove = this.orderConstraints.filter(
+			(c) => c.in.id == oldBlock.id || c.out.id == newBlock.id
+		);
+		constraintsToRemove.forEach((oldConstraint) => {
+			if (oldConstraint.in == oldBlock) {
+				this.addOrderConstraint(newBlock, oldConstraint.out, oldConstraint.dimension);
+			} else {
+				this.addOrderConstraint(oldConstraint.in, newBlock, oldConstraint.dimension);
+			}
+		});
+
+		for (const c of constraintsToRemove) this.removeOrderConstraint(c.in, c.out);
+
+		//
 
 		this.removeBlock(oldBlock.id);
 		this.addBlock(newBlock);
@@ -154,13 +171,17 @@ export class Filo {
 export class OrderConstraint {
 	in: Block;
 	out: Block;
+	dimension: Dimension;
 	self: kiwi.Constraint;
 
 	constructor(blockIn: Block, blockOut: Block, dimension: Dimension) {
 		this.in = blockIn;
 		this.out = blockOut;
+		this.dimension = dimension;
 		this.self = new kiwi.Constraint(
-			this.in.variables[dimension].plus(this.in.variables[dimensionToSize(dimension)]),
+			this.in.variables[dimension]
+				.plus(this.in.variables[dimensionToSize(dimension)])
+				.plus(config.viewport.defaultGap / 2), // TODO - Improve
 			kiwi.Operator.Le,
 			this.out.variables[dimension]
 		);

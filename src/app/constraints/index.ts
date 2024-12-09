@@ -1,6 +1,6 @@
 import type { Block } from '@/block/block.svelte';
 import type { Dimension, Side } from '@/types';
-import { getPerpendicularDimension } from '@/utils';
+// import { getPerpendicularDimension } from '@/utils';
 import * as kiwi from '@lume/kiwi';
 
 //
@@ -20,6 +20,7 @@ export class Link {
 	}
 
 	private calcConstraints(): kiwi.Constraint[] {
+		return [];
 		// const perpendicularDimension = getPerpendicularDimension(this.dimension);
 		// const mainAnchor = this.sign == 1 ? this.in : this.out;
 		// const mainBlock = mainAnchor.block;

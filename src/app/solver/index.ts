@@ -33,13 +33,11 @@ export class ConstraintSolver extends kiwi.Solver {
 	/* Link */
 
 	addLink(link: Link) {
-		this.addConstraint(link.constraints.main);
-		this.addConstraint(link.constraints.secondary);
+		this.addConstraint(link.constraint);
 	}
 
 	removeLink(link: Link) {
-		this.removeConstraint(link.constraints.main);
-		this.removeConstraint(link.constraints.secondary);
+		this.removeConstraint(link.constraint);
 	}
 }
 
