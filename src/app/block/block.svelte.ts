@@ -66,6 +66,15 @@ export class Block {
 		};
 	}
 
+	get expressions() {
+		return {
+			opposite: {
+				x: this.variables.x.plus(this.variables.width),
+				y: this.variables.y.plus(this.variables.height)
+			}
+		};
+	}
+
 	/* Db */
 
 	static get dbName() {

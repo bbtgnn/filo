@@ -6,9 +6,12 @@ import { Block } from '@/block/block.svelte';
 import { Link } from '@/link/link.svelte';
 import { ConstraintSolver, SpaceSolver } from '@/solver';
 import * as kiwi from '@lume/kiwi';
-import type { Rectangle } from '@/types';
+import type { Dimension, Rectangle, Sign } from '@/types';
 import { nanoid } from 'nanoid';
 import { View } from '@/view/view.svelte';
+import { getPerpendicularDimension, UnexpectedCaseError } from '@/utils';
+import { Option } from 'effect';
+import { config } from '@/config';
 
 //
 
@@ -21,6 +24,7 @@ export class Filo {
 
 	blocks = $state<Block[]>([]);
 	links = $state<Link[]>([]);
+	groups = $state<Group[]>([]);
 	origin = $state<{ block: Block; constraints: kiwi.Constraint[] } | undefined>(undefined);
 
 	//
@@ -50,6 +54,22 @@ export class Filo {
 	addLink(link: Link) {
 		this.links.push(link);
 		this.constraintsSolver.addLink(link);
+		const group = this.getGroupOnSide(link.in, link.dimension, link.sign);
+		if (Option.isSome(group)) {
+			this.addBlockToGroup(group.value, link.out);
+		} else {
+			const group = new Group(link.in, [link.out], link.dimension, signToSide(link.sign));
+			this.addGroup(group);
+		}
+	}
+
+	getGroupOnSide(block: Block, dimension: Dimension, sign: Sign): Option.Option<Group> {
+		const groups = this.groups.filter(
+			(g) => g.reference.id == block.id && g.side == signToSide(sign) && g.dimension == dimension
+		);
+		if (groups.length == 0) return Option.none();
+		else if (groups.length > 1) throw new UnexpectedCaseError();
+		else return Option.some(groups[0]);
 	}
 
 	removeLink(linkId: string) {
@@ -101,5 +121,108 @@ export class Filo {
 	removeBlockOrigin() {
 		this.origin?.constraints.forEach((c) => this.constraintsSolver.removeConstraint(c));
 		this.origin = undefined;
+	}
+
+	// Groups utility
+
+	addGroup(group: Group) {
+		this.groups.push(group);
+		this.addConstraints(group.constraints);
+		this.constraintsSolver.updateVariables();
+	}
+
+	addBlockToGroup(group: Group, block: Block) {}
+
+	addConstraints(constraints: kiwi.Constraint[]) {
+		for (const c of constraints) {
+			this.constraintsSolver.addConstraint(c);
+		}
+	}
+}
+
+//
+
+type Side = 'origin' | 'opposite';
+type Alignment = 'center' | Side;
+
+export class Group {
+	orderConstraints: OrderConstraint[] = [];
+	alignmentConstraint: kiwi.Constraint;
+
+	constructor(
+		public readonly reference: Block,
+		public readonly blocks: Block[],
+		public readonly dimension: Dimension,
+		public readonly side: Side,
+		public readonly alignment: Alignment = 'center'
+	) {
+		this.calculateConstraints();
+	}
+
+	calculateConstraints() {
+		this.orderConstraints = [];
+		for (let i = 0; i < this.blocks.length - 1; i++) {
+			this.orderConstraints.push(
+				new OrderConstraint(
+					{ in: this.blocks[i], out: this.blocks[i + 1] },
+					this.perpendicularDimension
+				)
+			);
+		}
+	}
+
+	get constraints(): kiwi.Constraint[] {
+		return this.orderConstraints.map((o) => o.self);
+	}
+
+	get perpendicularDimension(): Dimension {
+		return getPerpendicularDimension(this.dimension);
+	}
+
+	calcAlignmentConstraint(): kiwi.Constraint {
+		if (this.alignment == 'origin') {
+			return new kiwi.Constraint(
+				this.reference.variables[this.perpendicularDimension],
+				kiwi.Operator.Eq,
+				this.blocks[0].variables[this.perpendicularDimension]
+			);
+		} else if (this.alignment == 'opposite') {
+			return new kiwi.Constraint(
+				this.reference.variables[this.perpendicularDimension],
+				kiwi.Operator.Eq,
+				this.blocks.at(-1)!.variables[this.perpendicularDimension]
+			);
+		} else {
+			return new kiwi.Constraint(this.blocksthis.blocks[0].variables[this.perpendicularDimension]);
+		}
+	}
+
+	addBlock(block: Block): kiwi.Constraint[] {
+		this.blocks.push(block);
+		this.calculateConstraints();
+		return this.constraints;
+	}
+}
+
+function signToSide(sign: Sign): Side {
+	if (sign === 1) return 'opposite';
+	else return 'origin';
+}
+
+class OrderConstraint {
+	self: kiwi.Constraint;
+
+	constructor(
+		public readonly blocks: {
+			in: Block;
+			out: Block;
+		},
+		public readonly dimension: Dimension
+	) {
+		this.self = new kiwi.Constraint(
+			this.blocks.in.expressions.opposite[this.dimension].plus(config.viewport.defaultGap / 2),
+			kiwi.Operator.Le,
+			this.blocks.out.variables[dimension]
+		);
 	}
 }
