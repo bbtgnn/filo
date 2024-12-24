@@ -77,7 +77,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 	<span
 		style="position: absolute; left: 0; bottom: 0; padding: 5px; background-color: green; color: white;"
 	>
-		{JSON.stringify(block.position)}
+		{JSON.stringify({ ...block.position, w: block.width, h: block.height })}
 	</span>
 
 	{#if manager.filo.origin?.block == block}

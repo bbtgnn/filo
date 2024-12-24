@@ -64,12 +64,14 @@ export class Filo {
 	}
 
 	replaceBlock(oldBlock: Block, newBlock: Block) {
-		const linksToRemove = this.links.filter((link) => link.in == oldBlock || link.out == oldBlock);
+		const linksToRemove = this.links.filter(
+			(link) => link.in == oldBlock || link.out.includes(oldBlock)
+		);
 		const newLinks = linksToRemove.map((oldLink) => {
 			if (oldLink.in == oldBlock) {
 				return new Link(newBlock, oldLink.out, oldLink.dimension, oldLink.sign);
 			} else {
-				return new Link(oldLink.in, newBlock, oldLink.dimension, oldLink.sign);
+				return new Link(oldLink.in, [newBlock], oldLink.dimension, oldLink.sign);
 			}
 		});
 

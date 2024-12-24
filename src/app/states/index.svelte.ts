@@ -67,10 +67,10 @@ export class FocusState extends FiloBaseState<{
 		const blocks = splitResult.pipe(Option.getOrThrow);
 		const filo = this.filo;
 
-		const activeLink = new Link(blocks.in, blocks.out, 'y', 1);
+		const activeLink = new Link(blocks.in, [blocks.out], 'y', 1);
 		let queueLink: Link | undefined = undefined;
 		if (blocks.queue) {
-			queueLink = new Link(blocks.out, blocks.queue, 'y', 1);
+			queueLink = new Link(blocks.out, [blocks.queue], 'y', 1);
 		}
 
 		const links = {
@@ -151,7 +151,7 @@ export class PositioningState extends FiloBaseState<{
 	moveBlockOut({ dimension, sign }: Direction) {
 		const filo = this.filo;
 		const { blocks, links } = this.context;
-		const newActiveLink = new Link(blocks.in, blocks.out, dimension, sign);
+		const newActiveLink = new Link(blocks.in, [blocks.out], dimension, sign);
 
 		return new StateCommand({
 			name: this.moveBlockOut.name,
@@ -226,7 +226,7 @@ export class PositioningState extends FiloBaseState<{
 		if (!newBlockIn) return this.noop();
 
 		const { sign, dimension } = links.active;
-		const newActiveLink = new Link(newBlockIn, blocks.out, dimension, sign);
+		const newActiveLink = new Link(newBlockIn, [blocks.out], dimension, sign);
 
 		return new StateCommand({
 			name: this.moveBlockIn.name,

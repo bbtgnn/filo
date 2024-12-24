@@ -32,6 +32,9 @@ export class Block {
 			width: new kiwi.Variable(this.id + '_w'),
 			height: new kiwi.Variable(this.id + '_h')
 		};
+
+		this.variables.width.setValue(config.block.baseWidth);
+		this.variables.height.setValue(config.block.baseHeight);
 	}
 
 	get exp() {
@@ -43,6 +46,10 @@ export class Block {
 			size: {
 				x: this.variables.width,
 				y: this.variables.height
+			},
+			half: {
+				x: this.variables.width.divide(2),
+				y: this.variables.height.divide(2)
 			}
 		};
 	}
